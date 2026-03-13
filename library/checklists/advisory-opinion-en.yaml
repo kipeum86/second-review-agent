@@ -1,0 +1,35 @@
+document_type: advisory_opinion
+language: en
+description: English legal opinion review checklist
+
+dimensions:
+  substance:
+    - "IRAC/CRAC structure compliance"
+    - "Completeness of legal authority citations"
+    - "Logical support for each conclusion"
+    - "Counterargument acknowledgment"
+    - "Risk level explicitly stated"
+    - "Current law verified (no superseded authorities)"
+
+  client_alignment:
+    - "Answers the actual question posed"
+    - "Practical implications and action items included"
+    - "Appropriate level of detail for audience"
+
+  writing:
+    - "Consistent formal register throughout"
+    - "Bluebook citation form compliance"
+    - "Plain language balance (no unnecessary archaisms)"
+    - "Gender-neutral language"
+    - "Terminology consistency"
+
+  structure:
+    - "Required sections: Executive Summary, Issues, Brief Answer, Discussion, Conclusion"
+    - "Appendix/exhibits list (if applicable)"
+    - "Section numbering continuity"
+    - "Defined term consistency"
+
+  formatting:
+    - "Font family/size consistency"
+    - "Heading hierarchy"
+    - "Page margins and spacing"
