@@ -1,1 +1,254 @@
-# second-review-agent
+Language: **English** | [한국어](docs/ko/README.md)
+
+# Senior Legal Review Agent
+
+Final quality gate for AI-generated legal documents, powered by Claude Code.
+
+> **[Disclaimer](docs/en/disclaimer.md)** | **[면책조항](docs/ko/disclaimer.md)**
+
+## Overview
+
+`Senior Legal Review Agent` is a Claude Code agent scaffold that acts as the final review layer before any legal document leaves the firm. It reviews documents produced by four junior attorney agents ([contract-review](https://github.com/kipeum86/contract-review-agent), [legal-writing](https://github.com/kipeum86/legal-writing-agent), [general-legal-research](https://github.com/kipeum86/general-legal-research), [game-legal-research](https://github.com/kipeum86/game-legal-research-agent)) — verifying citations, checking legal logic, evaluating writing quality, and producing redlined DOCX deliverables with tracked changes.
+
+The agent persona is **Partner Hongcheol Ju** (주홍철 파트너) — a self-described AI Luddite who fundamentally distrusts machine-generated legal documents. This makes him the most relentless verifier in the firm. His review style: red pen in the margin, one-line comments, zero tolerance for hallucinated citations.
+
+This project does **not** provide legal advice. It assists with quality control of AI-generated legal work product.
+
+## Core Design Principles
+
+- **Anti-hallucination in review**: The reviewer itself must not hallucinate. `Nonexistent` classification requires positive evidence of non-existence; when in doubt, classify as `Unverifiable`
+- **Verify, don't draft**: The agent checks and critiques — it never supplies new legal authorities, restructures analysis, or provides legal advice
+- **Independent release gate**: The release recommendation (Pass / Pass with Warnings / Manual Review Required / Release Not Recommended) is a safety gate independent of the letter grade
+- **Tracked changes only**: All corrections go through DOCX tracked changes with margin comments. No silent edits
+- **Jurisdiction-aware citations**: Verification against primary legal databases (law.go.kr, congress.gov, eur-lex.europa.eu, and others)
+
+## Workflows
+
+| Command | Workflow | Description |
+|---------|----------|-------------|
+| `/review` | WF1 — Single Document Review | 8-step pipeline: parse, verify citations, review substance/writing/structure/formatting, score, generate redline, self-check |
+| `/cross-review` | WF2 — Cross-Document Review | Compare multiple related documents for factual/terminological/date consistency |
+| `/rereview` | WF3 — Re-review | Review a revised document against previous round findings |
+| `/library` | WF4 — Library Management | Manage writing samples, checklists, known-issue patterns, style profiles |
+
+### WF1: Single Document Review (8 Steps)
+
+| Step | Name | Skills | Output |
+|------|------|--------|--------|
+| 1 | Intake | — | `review-manifest.json` |
+| 2 | Parsing | `document-parser` | `parsed-structure.json`, `citation-list.json`, `defined-terms.json` |
+| 3 | Citation Verification | `citation-checker` (via sub-agent) | `verification-audit.json` |
+| 4 | Substantive Review | `substance-reviewer`, `writing-quality-reviewer`, `structure-checker` | Dim 2-5 findings |
+| 5 | Formatting Review | `formatting-reviewer` | Dim 6 findings |
+| 6 | Consolidation & Scoring | `scoring-engine`, `known-issues-manager` | `issue-registry.json`, `review-scorecard.json` |
+| 7 | Output Generation | `redline-generator`, `cover-memo-writer` | Redline DOCX, Clean DOCX, Cover Memo |
+| 8 | Self-Check | `quality-gate` | 7-item verification report |
+
+Session state is checkpointed after every step in `output/{matter_id}/checkpoint.json`. Interrupted sessions can be resumed.
+
+## Seven Review Dimensions
+
+| # | Dimension | What It Checks |
+|---|-----------|----------------|
+| 1 | Citation & Fact Verification | Do cited authorities exist? Correct pinpoint? Support the claimed proposition? |
+| 2 | Legal Substance & Logic | Sound reasoning? Logical gaps? Counterarguments addressed? |
+| 3 | Client Alignment | Does the document answer the actual question? Practical implications included? |
+| 4 | Writing Quality | Register consistency, terminology, translationese (번역투), style fingerprint |
+| 5 | Structural Integrity | Numbering continuity, cross-reference validity, defined-term consistency |
+| 6 | Formatting & Presentation | Font/size consistency, heading hierarchy, margin uniformity, professional appearance |
+| 7 | Cross-Document Consistency | (WF2 only) Factual/terminological/date consistency across related documents |
+
+## Citation Verification Taxonomy
+
+The agent classifies every citation into one of three primary statuses:
+
+| Status | Sub-status | Meaning |
+|--------|-----------|---------|
+| **Verified** | — | Authority exists and supports the claimed proposition |
+| **Issue** | Nonexistent | Positive evidence the authority does not exist |
+| | Wrong_Pinpoint | Authority exists but article/section number is wrong |
+| | Unsupported_Proposition | Authority exists but doesn't support the claim |
+| | Wrong_Jurisdiction | Authority from a different jurisdiction |
+| | Stale | Authority amended or repealed since the claimed date |
+| | Translation_Mismatch | Translation materially diverges from source text |
+| **Unverifiable** | No_Access | Primary source database inaccessible |
+| | Secondary_Only | Only secondary sources confirm existence |
+| | No_Evidence | Search inconclusive — neither confirmed nor denied |
+
+**Critical rule**: `Nonexistent` requires **positive evidence** of non-existence (authoritative database searched, no match found). When uncertain, the agent must classify as `Unverifiable_No_Evidence`.
+
+## Review Depth
+
+| Level | When | Citation Scope |
+|-------|------|----------------|
+| **Quick Scan** | "빨리", "훑어봐", internal memo, early draft | Format validation only; escalate failures |
+| **Standard** (default) | General review | Dual-track for dispositive citations |
+| **Deep Review** | "법원 제출용", court filing, external opinion | Dual-track for all citations |
+
+## Scoring & Release
+
+**Per-dimension scores**: 1-10 scale (10 = no issues, 1-3 = critical found)
+
+**Overall grade**: A (avg >= 8.5), B (>= 7.0), C (>= 5.0), D (< 5.0)
+
+**Release recommendation** (independent safety gate):
+
+| Recommendation | Trigger |
+|----------------|---------|
+| Release Not Recommended | Any Dim 1-3 Critical; OR Nonexistent citation on dispositive conclusion |
+| Manual Review Required | Any Unverifiable citation on key conclusion; OR Dim 2 has >= 2 Major findings |
+| Pass with Warnings | Majors exist but no Dim 1-3 Criticals; OR grade < B |
+| Pass | No Critical or Major; grade >= B |
+
+## Architecture
+
+```text
+Main agent (CLAUDE.md orchestrator)
+  |-- Skills (13):
+  |     document-parser, citation-checker, substance-reviewer,
+  |     writing-quality-reviewer, structure-checker, formatting-reviewer,
+  |     scoring-engine, known-issues-manager, quality-gate,
+  |     redline-generator, cover-memo-writer, cross-document-checker,
+  |     library-manager
+  |-- Sub-agent:
+  |     citation-verifier (dispatched for Standard/Deep review)
+  |-- Python scripts (13):
+  |     parse-docx-structure.py, extract-citations.py, extract-defined-terms.py,
+  |     register-validator.py, term-consistency-checker.py, style-fingerprint-compare.py,
+  |     numbering-validator.py, cross-reference-checker.py, docx-format-inspector.py,
+  |     build-audit-trail.py, ingest-sample.py, build-style-profile.py,
+  |     validate-checklist.py
+  `-- Slash commands (4):
+        /review, /cross-review, /rereview, /library
+```
+
+## Deliverables
+
+Each review produces three files:
+
+| Deliverable | Description |
+|-------------|-------------|
+| **Redline DOCX** | Original document with tracked changes (`<w:del>/<w:ins>`) and severity-coded margin comments. Author: "주홍철 파트너" / "Partner H. Ju" |
+| **Clean DOCX** | Original with only Critical/Major textual corrections accepted. No tracked changes or comments remain |
+| **Cover Memo** | 10-section review report: release recommendation (top), scorecard table, findings by severity, recurring patterns, style analysis, next steps |
+
+## Library System
+
+The agent maintains a review library for pattern accumulation and style consistency:
+
+| Directory | Purpose | Managed by |
+|-----------|---------|------------|
+| `library/checklists/` | Document-type-specific review checklists (YAML) | `/library add-checklist` |
+| `library/known-issues/` | Recurring patterns per junior agent (JSON) | Auto-proposed after >= 3 occurrences |
+| `library/samples/` | Writing samples for style fingerprinting | `/library add-sample` |
+| `library/style-profiles/` | Aggregated style fingerprint profiles | `/library style-profile regenerate` |
+
+Six default checklists are included: advisory opinion (KR/EN), research report, litigation filing, contract review report, and a general fallback.
+
+## Repository Structure
+
+```text
+/project-root
+|-- CLAUDE.md                          # main orchestrator
+|-- README.md                          # this file
+|-- .gitignore
+|-- .claude/
+|   |-- settings.local.json            # MCP + permission config
+|   |-- agents/
+|   |   `-- citation-verifier/AGENT.md
+|   |-- commands/
+|   |   |-- review.md
+|   |   |-- cross-review.md
+|   |   |-- rereview.md
+|   |   `-- library.md
+|   `-- skills/
+|       |-- document-parser/           # DOCX parsing + citation/term extraction
+|       |-- citation-checker/          # verification workflow + audit trail
+|       |-- substance-reviewer/        # legal logic + client alignment (Dim 2-3)
+|       |-- writing-quality-reviewer/  # register, terminology, style (Dim 4)
+|       |-- structure-checker/         # numbering, cross-refs (Dim 5)
+|       |-- formatting-reviewer/       # DOCX format inspection (Dim 6)
+|       |-- scoring-engine/            # scoring + release recommendation
+|       |-- known-issues-manager/      # pattern matching + registry
+|       |-- quality-gate/              # 7-item self-verification
+|       |-- redline-generator/         # tracked changes + comments in DOCX
+|       |-- cover-memo-writer/         # 10-section review memo
+|       |-- cross-document-checker/    # cross-doc consistency (Dim 7)
+|       `-- library-manager/           # sample/checklist/profile management
+|-- library/
+|   |-- checklists/                    # 6 default YAML checklists
+|   |-- known-issues/                  # 4 per-agent JSON registries
+|   |-- samples/                       # gitignored; user writing samples
+|   `-- style-profiles/                # gitignored; generated profiles
+|-- input/                             # gitignored; drop documents here
+|-- output/                            # gitignored; review results
+`-- docs/
+    |-- review-dimensions-reference.md
+    |-- en/
+    |   `-- disclaimer.md
+    `-- ko/
+        |-- README.md
+        `-- disclaimer.md
+```
+
+## How to Use
+
+### Requirements
+
+- [Claude Code](https://claude.ai/code) CLI installed and authenticated
+- Python 3 + `python-docx` for DOCX output: `pip install python-docx`
+- MCP search providers (brave-search, tavily) for citation verification — optional but recommended
+
+### Running a review
+
+1. Clone this repo and open the directory in Claude Code.
+2. Drop a DOCX file into `input/`.
+3. Run `/review` or simply ask: "이거 검토해줘" / "Review this document."
+4. The agent runs the 8-step pipeline and produces deliverables in `output/`.
+5. Interrupted sessions resume automatically from the last checkpoint.
+
+**Example prompts:**
+
+```text
+input/ 에 있는 법률의견서 검토해줘. 정밀검토로.
+```
+
+```text
+Review the advisory opinion in input/. Standard depth. The client is a game publisher
+asking about loot box regulations in Korea.
+```
+
+```text
+/cross-review — input/ 에 리서치 리포트랑 법률의견서 두 개 있어. 교차검토 해줘.
+```
+
+```text
+/rereview — 수정본 올렸어. 이전 라운드 피드백 반영 확인해줘.
+```
+
+### Review depth selection
+
+| Say this | Agent infers |
+|----------|-------------|
+| "빨리 훑어봐", "quick scan" | Quick Scan |
+| (nothing specific) | Standard (default) |
+| "정밀검토", "법원 제출용", "deep review" | Deep Review |
+
+## Sibling Projects
+
+This agent is the final review layer for documents produced by:
+
+| Agent | Purpose |
+|-------|---------|
+| [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | Contract analysis and risk identification |
+| [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | Legal document drafting |
+| [general-legal-research](https://github.com/kipeum86/general-legal-research) | Cross-jurisdictional legal research |
+| [game-legal-research-agent](https://github.com/kipeum86/game-legal-research-agent) | Game industry regulatory research |
+
+## Disclaimer
+
+This project supports legal document quality control workflows. It does not provide legal advice. For legal decisions, consult qualified counsel in the relevant jurisdiction. See the full [Disclaimer](docs/en/disclaimer.md).
+
+## License
+
+MIT. See `LICENSE`.
