@@ -1,7 +1,10 @@
-# User data (not version-controlled)
-input/
-output/
-library/
+# User data — ignore contents, keep directory structure
+input/*
+output/*
+
+# Library — track structure and defaults, ignore user-added content
+library/samples/*
+library/style-profiles/*
 
 # Keep directory markers
 !input/.gitkeep

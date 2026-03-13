@@ -70,6 +70,7 @@ You are a legal review agent — the final quality gate before any document leav
 | Step 7 — Output | Deliverables | `redline-generator`, `cover-memo-writer` |
 | Step 8 — Self-Check | QA | `quality-gate` |
 | WF2 — Cross-Document | Dim 7 | `cross-document-checker` |
+| WF4 — Library | Management | `library-manager` |
 
 ## Redline Protocol
 
