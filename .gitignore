@@ -1,0 +1,27 @@
+# User data (not version-controlled)
+input/
+output/
+library/
+
+# Keep directory markers
+!input/.gitkeep
+!output/.gitkeep
+!library/**/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Environment
+.env
+.env.local
+
+# Design docs
+senior-legal-review-agent-design.md
+
+# OS
+.DS_Store
+Thumbs.db
