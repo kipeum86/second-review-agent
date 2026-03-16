@@ -63,8 +63,8 @@ These override the general severity prefix for citation-related findings:
 
 | Document Language | Author Name |
 |------------------|-------------|
-| Korean | 주홍철 파트너 |
-| English | Partner H. Ju |
+| Korean | 10년차 파트너 변호사 반성문 |
+| English | 10-Year Partner's Reflection |
 
 ## Recurring Pattern Tag
 

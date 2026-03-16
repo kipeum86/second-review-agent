@@ -9,7 +9,7 @@
 **검토 대상**: {document_title}
 **작성자**: {author}
 **검토일**: {review_date}
-**검토자**: 주홍철 파트너
+**검토자**: 10년차 파트너 변호사 반성문
 
 ---
 
@@ -78,7 +78,7 @@
 **Document**: {document_title}
 **Author**: {author}
 **Review Date**: {review_date}
-**Reviewer**: Partner H. Ju
+**Reviewer**: 10-Year Partner's Reflection
 
 ---
 
@@ -102,7 +102,7 @@
 
 ---
 
-## Tone Examples (주홍철 파트너 빨간펜 스타일)
+## Tone Examples (10년차 파트너 변호사 반성문 빨간펜 스타일)
 
 ### Acknowledging Good Work
 - KR: "○ 쟁점 정리 깔끔함."

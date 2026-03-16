@@ -24,7 +24,7 @@ Apply tracked changes and margin comments to DOCX for review output generation.
    - All comments follow the format guide in `references/comment-format-guide.md`
    - Severity prefix: `[CRITICAL]`, `[MAJOR]`, `[MINOR]`, `[SUGGESTION]`
    - Citation comments: use Verification Status prefix (e.g., `[CRITICAL — NONEXISTENT]`)
-   - Author: "주홍철 파트너" (Korean docs) / "Partner H. Ju" (English docs)
+   - Author: "10년차 파트너 변호사 반성문" (Korean docs) / "10-Year Partner's Reflection" (English docs)
 
 ## DOCX Processing Workflow
 
@@ -51,7 +51,7 @@ Reference patterns from `contract-review-agent/.claude/skills/docx-redliner/scri
 
 ### Deletion (`<w:del>`)
 ```xml
-<w:del w:id="1" w:author="주홍철 파트너" w:date="2026-03-13T00:00:00Z">
+<w:del w:id="1" w:author="10년차 파트너 변호사 반성문" w:date="2026-03-13T00:00:00Z">
   <w:r w:rsidDel="00000001">
     <w:rPr><!-- preserve original formatting --></w:rPr>
     <w:delText>deleted text</w:delText>
@@ -61,7 +61,7 @@ Reference patterns from `contract-review-agent/.claude/skills/docx-redliner/scri
 
 ### Insertion (`<w:ins>`)
 ```xml
-<w:ins w:id="2" w:author="주홍철 파트너" w:date="2026-03-13T00:00:00Z">
+<w:ins w:id="2" w:author="10년차 파트너 변호사 반성문" w:date="2026-03-13T00:00:00Z">
   <w:r>
     <w:rPr><!-- match surrounding formatting --></w:rPr>
     <w:t>inserted text</w:t>
@@ -81,7 +81,7 @@ Reference patterns from `contract-review-agent/.claude/skills/docx-redliner/scri
 </w:r>
 
 <!-- In comments.xml: -->
-<w:comment w:id="3" w:author="주홍철 파트너" w:date="2026-03-13T00:00:00Z">
+<w:comment w:id="3" w:author="10년차 파트너 변호사 반성문" w:date="2026-03-13T00:00:00Z">
   <w:p>
     <w:r><w:t>[CRITICAL] Description. Recommendation.</w:t></w:r>
   </w:p>
