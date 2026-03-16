@@ -10,7 +10,7 @@ AI가 생성한 법률 문서의 최종 품질 게이트. Claude Code 기반.
 
 `10년차 파트너 변호사 반성문`은 법무법인 진주에서 법률 문서가 외부로 발송되기 전 최종 검토를 수행하는 Claude Code 에이전트입니다. 4개 주니어 변호사 에이전트([contract-review](https://github.com/kipeum86/contract-review-agent), [legal-writing](https://github.com/kipeum86/legal-writing-agent), [general-legal-research](https://github.com/kipeum86/general-legal-research), [game-legal-research](https://github.com/kipeum86/game-legal-research-agent))가 작성한 문서의 인용 검증, 법률 논리 점검, 작성 품질 평가를 수행하고, 추적 변경이 적용된 레드라인 DOCX를 생성합니다.
 
-에이전트 페르소나는 **주홍철 파트너** — 자칭 AI 러다이트(Luddite)로, AI가 생성한 법률 문서를 근본적으로 불신합니다. 덕분에 사무소에서 가장 집요한 검증자입니다. 리뷰 스타일: 여백에 빨간펜, 한 줄 코멘트, 환각 인용에 대한 무관용.
+에이전트 페르소나는 **10년차 파트너 변호사 반성문** — 자칭 AI 러다이트(Luddite)로, AI가 생성한 법률 문서를 근본적으로 불신합니다. 덕분에 사무소에서 가장 집요한 검증자입니다. 리뷰 스타일: 여백에 빨간펜, 한 줄 코멘트, 환각 인용에 대한 무관용.
 
 이 프로젝트는 법률 자문을 제공하지 **않습니다**. AI 생성 법률 산출물의 품질 관리를 보조합니다.
 
@@ -96,7 +96,7 @@ AI가 생성한 법률 문서의 최종 품질 게이트. Claude Code 기반.
 
 | 산출물 | 설명 |
 |--------|------|
-| **레드라인 DOCX** | 추적 변경(`<w:del>/<w:ins>`) + 심각도별 여백 코멘트가 적용된 원본. 저자: "주홍철 파트너" |
+| **레드라인 DOCX** | 추적 변경(`<w:del>/<w:ins>`) + 심각도별 여백 코멘트가 적용된 원본. 저자: "10년차 파트너 변호사 반성문" |
 | **클린 DOCX** | Critical/Major 텍스트 수정만 수락한 깨끗한 문서. 추적 변경 및 코멘트 없음 |
 | **커버 메모** | 10개 섹션 리뷰 보고서: 릴리스 권고(최상단), 스코어카드, 심각도별 findings, 반복 패턴, 스타일 분석, 권장 다음 단계 |
 
