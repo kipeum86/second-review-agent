@@ -113,7 +113,24 @@ Without context, Dimension 3 (Client Alignment) is explicitly skipped with reaso
 |-----------|----------|
 | Language | Defaults to input document language. Cover Memo matches. User may override. |
 | Page size | A4 for Korean docs. US Letter for US-jurisdiction English docs. A4 for all others. |
-| Primary format | DOCX for all deliverables. Markdown fallback if DOCX generation fails. |
+| Primary format | **Output format must match input format.** See Format Matching Rule below. |
+
+### Format Matching Rule (MANDATORY)
+
+**입력 파일 형식과 동일한 형식으로 결과물을 생성해야 합니다. 채팅 텍스트(Markdown)로 리뷰 결과를 출력하는 것은 금지됩니다.**
+
+| Input Format | Output: Redline | Output: Clean | Output: Cover Memo |
+|-------------|----------------|---------------|-------------------|
+| DOCX | DOCX (tracked changes + margin comments) | DOCX (corrections accepted) | DOCX |
+| PDF | PDF (annotation layer) or DOCX redline + note | DOCX (corrections applied) | DOCX |
+| HWP/HWPX | DOCX redline (HWP 직접 수정 불가) + note | DOCX | DOCX |
+| Markdown/TXT | Markdown (diff format) | Markdown (clean) | Markdown |
+
+**Enforcement rules**:
+1. **DOCX input → DOCX output, 예외 없음.** 채팅창에 마크다운으로 리뷰 결과를 출력하면 안 됩니다. 반드시 `python-docx`로 DOCX 파일을 생성하여 `deliverables/`에 저장할 것.
+2. 채팅 텍스트는 진행 상황 보고, 질문, 요약에만 사용. 리뷰 본문을 채팅으로 출력 금지.
+3. Markdown fallback은 **DOCX 생성이 기술적으로 실패한 경우에만** 허용. 이 경우에도 먼저 재시도 1회를 수행하고, 실패 사유를 사용자에게 보고한 후에만 fallback 진행.
+4. 모든 deliverable은 `output/{matter_id}/deliverables/` 디렉토리에 파일로 저장. 채팅 응답에 inline으로 넣지 않음.
 
 ## Resume Protocol
 
