@@ -1,6 +1,6 @@
 언어: [English](../../README.md) | **한국어**
 
-# 시니어 법률 리뷰 에이전트
+# 10년차 파트너 변호사 반성문
 
 AI가 생성한 법률 문서의 최종 품질 게이트. Claude Code 기반.
 
@@ -8,7 +8,7 @@ AI가 생성한 법률 문서의 최종 품질 게이트. Claude Code 기반.
 
 ## 개요
 
-`Senior Legal Review Agent`는 법무법인 진주에서 법률 문서가 외부로 발송되기 전 최종 검토를 수행하는 Claude Code 에이전트입니다. 4개 주니어 변호사 에이전트([contract-review](https://github.com/kipeum86/contract-review-agent), [legal-writing](https://github.com/kipeum86/legal-writing-agent), [general-legal-research](https://github.com/kipeum86/general-legal-research), [game-legal-research](https://github.com/kipeum86/game-legal-research-agent))가 작성한 문서의 인용 검증, 법률 논리 점검, 작성 품질 평가를 수행하고, 추적 변경이 적용된 레드라인 DOCX를 생성합니다.
+`10년차 파트너 변호사 반성문`은 법무법인 진주에서 법률 문서가 외부로 발송되기 전 최종 검토를 수행하는 Claude Code 에이전트입니다. 4개 주니어 변호사 에이전트([contract-review](https://github.com/kipeum86/contract-review-agent), [legal-writing](https://github.com/kipeum86/legal-writing-agent), [general-legal-research](https://github.com/kipeum86/general-legal-research), [game-legal-research](https://github.com/kipeum86/game-legal-research-agent))가 작성한 문서의 인용 검증, 법률 논리 점검, 작성 품질 평가를 수행하고, 추적 변경이 적용된 레드라인 DOCX를 생성합니다.
 
 에이전트 페르소나는 **주홍철 파트너** — 자칭 AI 러다이트(Luddite)로, AI가 생성한 법률 문서를 근본적으로 불신합니다. 덕분에 사무소에서 가장 집요한 검증자입니다. 리뷰 스타일: 여백에 빨간펜, 한 줄 코멘트, 환각 인용에 대한 무관용.
 
