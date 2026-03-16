@@ -34,8 +34,80 @@ Citation from citation-list.json
     │
     ├── Classify per Verification Status Taxonomy
     │
-    └── Record in audit trail
+    ├── Classify Source Authority Tier (see below)
+    │
+    └── Record in audit trail (include authority_tier)
 ```
+
+## Source Authority Classification
+
+Every verified citation must be assigned an **authority tier**. This classification is recorded in `verification-audit.json` alongside the verification status and is consumed by the substance-reviewer (Step 4) to detect secondary-source-reliance defects.
+
+### Authority Tiers
+
+| Tier | Label | Description | Examples |
+|------|-------|-------------|----------|
+| **1** | Primary Law | Binding legal authority enacted or issued by an authoritative body | Statutes, regulations, court decisions, constitutional provisions, official gazette notices, administrative rulings, treaties |
+| **2** | Authoritative Secondary | Official or quasi-official interpretive materials with recognized institutional weight | Government guidance documents, official legislative history, regulatory preambles, authoritative commentaries (주석서), Restatements, official agency reports, approved practice standards |
+| **3** | Secondary | Non-binding analytical or scholarly materials | Academic articles, law firm client alerts/newsletters, legal encyclopedias (CJS, AmJur), textbooks, practitioner treatises, Westlaw/LexisNexis practice notes, 법률신문 commentaries |
+| **4** | Tertiary / Low-Reliability | Non-legal or non-expert sources with no institutional authority | News articles, blog posts, Wikipedia, general websites, social media, press releases, marketing materials, conference slides |
+
+### Classification Rules
+
+1. **When in doubt, tier down** — if a source straddles two tiers, assign the lower (less authoritative) tier
+2. **Government guidance** is Tier 2 only if issued by the relevant regulatory body. A different agency's informal commentary on another's regulation is Tier 3
+3. **Law firm publications** are always Tier 3, regardless of the firm's reputation — they represent advocacy or marketing, not authoritative interpretation
+4. **AI training data artifacts** — if a citation cannot be traced to any identifiable source and appears to be synthesized from training data, classify as Tier 4 and flag additionally as `Unverifiable_Synthetic_Suspected`
+5. **Court decisions from lower courts** remain Tier 1 but may be annotated with jurisdictional weight (e.g., persuasive vs. binding)
+
+### Audit Trail Schema Addition
+
+Each citation entry in `verification-audit.json` must include:
+
+```json
+{
+  "citation_id": "C-001",
+  "text": "...",
+  "verification_status": "Verified",
+  "authority_tier": 1,
+  "authority_label": "Primary Law",
+  "authority_note": null,
+  "supports_conclusion": true,
+  "conclusion_location": {"section": "III.2", "paragraph_index": 45}
+}
+```
+
+- `authority_tier`: Integer 1–4
+- `authority_label`: Human-readable tier name
+- `authority_note`: Optional note explaining classification rationale (especially for borderline cases or Tier 4 flags)
+- `supports_conclusion`: Boolean — whether this citation is used to support a legal conclusion (vs. background/context)
+- `conclusion_location`: If `supports_conclusion` is true, the location of the conclusion it supports
+
+### Flagging Rules for Substance Review Handoff
+
+After completing verification, generate a **source authority summary** appended to `verification-audit.json`:
+
+```json
+{
+  "source_authority_summary": {
+    "tier_distribution": {"tier_1": 12, "tier_2": 3, "tier_3": 5, "tier_4": 1},
+    "conclusion_support_by_tier": {"tier_1": 8, "tier_2": 2, "tier_3": 4, "tier_4": 1},
+    "high_risk_citations": [
+      {
+        "citation_id": "C-015",
+        "authority_tier": 3,
+        "supports_conclusion": true,
+        "conclusion_location": {"section": "IV.1", "paragraph_index": 72},
+        "risk": "Tier 3 source (법률신문 기사) used as sole support for dispositive conclusion"
+      }
+    ]
+  }
+}
+```
+
+`high_risk_citations` includes any citation where:
+- `authority_tier` ≥ 3 AND `supports_conclusion` = true
+- No Tier 1–2 citation supports the same conclusion within the same section
 
 ## Search Query Construction by Jurisdiction
 

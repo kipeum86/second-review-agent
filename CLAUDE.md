@@ -1,4 +1,4 @@
-# Senior Legal Review Agent
+# 10년차 파트너 변호사 반성문
 
 ## Reviewer Profile
 
