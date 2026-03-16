@@ -11,5 +11,8 @@ Execute WF2 — Cross-Document Review Pipeline (4 steps):
    - CD-2: Cross-Document Extraction (extract parties, dates, terms, facts, conclusions per doc)
    - CD-3: Consistency Analysis (compare across documents using cross-document-checker skill)
    - CD-4: Cross-Document Report generation
-3. If a single-document review (WF1) is also running, tag findings as Dimension 7 and integrate into issue-registry
+3. If a single-document review (WF1) is also running for the same matter:
+   - **Do NOT run WF2 CD-3 and WF1 Step 6 simultaneously** — both write to issue-registry.json
+   - Sequencing: WF2 CD-3 must complete first → WF1 Step 6 then reads and merges Dim 7 findings during consolidation
+   - Tag all WF2 findings as Dimension 7 before WF1 Step 6 merges them
 4. Save cross-document report to `output/{matter_id}/round_{N}/deliverables/`

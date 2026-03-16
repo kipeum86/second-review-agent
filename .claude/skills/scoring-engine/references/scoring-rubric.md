@@ -46,7 +46,7 @@
 | 5–6 | Partially answers question; significant tangents |
 | 3–4 | Fails to address the core question |
 | 1–2 | Analysis is irrelevant to the client's needs |
-| N/A | Dimension skipped (no context provided) — excluded from average |
+| N/A | Dimension skipped (no context provided) — excluded from average. In review-scorecard.json: `score: null, skipped: true, skip_reason: "..."` |
 
 ## Dimension 4 — Writing Quality
 

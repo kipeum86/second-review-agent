@@ -14,6 +14,7 @@
 | `frequency` | integer | Yes | Number of distinct matters where this pattern has been observed |
 | `first_seen` | string | Yes | ISO date of first observation |
 | `last_seen` | string | Yes | ISO date of most recent observation |
+| `matter_ids` | array[string] | No | List of distinct matter_ids where this pattern was observed. `frequency` = `len(set(matter_ids))` |
 | `examples` | array[string] | No | Anonymized examples (before → after) |
 
 ## File Organization

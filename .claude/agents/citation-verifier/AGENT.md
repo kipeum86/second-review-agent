@@ -107,7 +107,13 @@ For each citation:
    - KR case: NNNN[consonant]NNNNN pattern valid? Court name legitimate?
    - US: Title/Section USC format valid? Reporter citation format valid?
    - EU: Regulation/Directive numbering format valid?
-3. **Execute search** per the fallback chain
+3. **Quick Scan Escalation Criteria**: In Quick Scan mode, only citations that FAIL format validation are sent for web search verification. A citation "fails format validation" if:
+   - KR statute: does not match pattern `법률 제\d{4,5}호`
+   - KR case: does not match `\d{4}[가-힣]{1,3}\d{2,6}` with recognized court prefix (대법원, 고등법원, 지방법원, 헌법재판소)
+   - US: does not match standard USC/CFR/Reporter patterns per citation-checker format validation rules
+   - EU: does not match Regulation/Directive numbering format
+   All other citations in Quick Scan are verified against the source list only.
+4. **Execute search** per the fallback chain
 4. **Assess result**: Does the found authority match the citation text, pinpoint, and claimed proposition?
 5. **Classify** per the Verification Status Taxonomy
 6. **Document evidence**: URL, search query used, key excerpt from source
@@ -143,6 +149,11 @@ Write `working/verification-audit.json` with this structure:
       "claimed_content": "...",
       "verification_method": "web_search",
       "verification_status": "Verified",
+      "authority_tier": 1,
+      "authority_label": "Primary Law",
+      "authority_note": null,
+      "supports_conclusion": true,
+      "conclusion_location": {"section": "III.2", "paragraph_index": 45},
       "evidence": {
         "url": "https://law.go.kr/...",
         "search_query": "...",
@@ -151,9 +162,19 @@ Write `working/verification-audit.json` with this structure:
       "confidence": "high",
       "notes": ""
     }
-  ]
+  ],
+  "source_authority_summary": {
+    "tier_distribution": {"tier_1": 10, "tier_2": 2, "tier_3": 2, "tier_4": 1},
+    "conclusion_support_by_tier": {"tier_1": 8, "tier_2": 1, "tier_3": 2, "tier_4": 1},
+    "high_risk_citations": []
+  }
 }
 ```
+
+**Output Schema Rules**:
+- Output MUST use a flat `citations` array. Do NOT nest citations by category (e.g., `primary_legislation`, `case_law`). Use the `citation_type` field to distinguish statute/case/regulation/treaty.
+- Every citation MUST include `authority_tier` (integer 1–4) and `authority_label`. See citation-checker SKILL.md Source Authority Classification for tier definitions.
+- `supports_conclusion` and `conclusion_location` are required when the citation supports a legal conclusion (vs. background/context).
 
 ## Skills Used
 
