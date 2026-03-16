@@ -60,6 +60,8 @@ For each finding:
 
 This sub-step directly consumes `verification-audit.json` — specifically `source_authority_summary.high_risk_citations` and per-citation `authority_tier` fields.
 
+**Prerequisite**: This sub-step requires `authority_tier` fields in `verification-audit.json`. If `source_authority_summary` or per-citation `authority_tier` fields are absent (legacy format or citation-verifier did not produce them), skip the entire Source Authority Cross-Check and log: "Source Authority Cross-Check skipped — authority_tier data not available in verification-audit.json."
+
 **What to check**:
 
 1. **Secondary Source Reliance** (`secondary_source_reliance`): For each conclusion or key assertion in the document, verify that its supporting citations include at least one Tier 1 or Tier 2 source. If a conclusion rests solely on Tier 3–4 citations:

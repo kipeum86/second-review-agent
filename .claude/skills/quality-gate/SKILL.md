@@ -10,6 +10,8 @@ Run each check against the generated outputs. All must pass for clean delivery.
 **Verify**: Redline DOCX contains tracked changes for ALL Critical and Major findings in issue-registry.json.
 - Count tracked changes in redline → count must match Critical + Major findings that have textual corrections
 - Missing tracked change for a Critical finding = self-check failure
+- If redline is comment-only (Phase 1 — no tracked changes), verify: comment count in DOCX ≥ total issue count in issue-registry.json
+- Each comment must have the correct severity prefix per comment-format-guide.md
 
 ### Check 2 — Review Comment Integrity
 **Verify**: No review comment in the redline DOCX itself contains a hallucination or unsupported assertion.
@@ -30,6 +32,9 @@ Run each check against the generated outputs. All must pass for clean delivery.
 - Dimension with Critical finding should score 1–4
 - Overall grade computation matches the average
 - No mathematical errors in scoring
+- Release recommendation is exactly one of: "Pass", "Pass with Warnings", "Manual Review Required", "Release Not Recommended"
+- Grade is exactly one of: A, B, C, D (no plus/minus modifiers)
+- Skipped dimensions have `score: null, skipped: true` and are excluded from the average
 
 ### Check 5 — Audit Trail Completeness
 **Verify**: Verification audit trail is complete per review depth setting.

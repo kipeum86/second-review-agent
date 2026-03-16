@@ -41,6 +41,8 @@
 | 6. 서식·외관 | {score}/10 | {summary} |
 | **종합** | **{grade}** | |
 
+차원 3이 생략된 경우 해당 행에 "N/A (검토 생략 — 의뢰 맥락 미제공)" 표시.
+
 ---
 
 ### Critical 소견 (반드시 수정)
@@ -99,6 +101,8 @@
 ---
 
 (Sections 4-10 follow the same structure as the Korean template above, in English)
+
+If Dimension 3 is skipped, display "N/A (skipped — no client context provided)" in the scorecard row.
 
 ---
 

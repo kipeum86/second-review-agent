@@ -8,7 +8,7 @@ Final quality gate for AI-generated legal documents, powered by Claude Code.
 
 ## Overview
 
-`10년차 파트너 변호사 반성문` is a Claude Code agent scaffold that acts as the final review layer before any legal document leaves the firm. It reviews documents produced by four junior attorney agents ([contract-review](https://github.com/kipeum86/contract-review-agent), [legal-writing](https://github.com/kipeum86/legal-writing-agent), [general-legal-research](https://github.com/kipeum86/general-legal-research), [game-legal-research](https://github.com/kipeum86/game-legal-research-agent)) — verifying citations, checking legal logic, evaluating writing quality, and producing redlined DOCX deliverables with tracked changes.
+`10년차 파트너 변호사 반성문` is a Claude Code agent scaffold that acts as the final review layer before any legal document leaves the firm. It reviews documents produced by Associate Ko ([contract-review](https://github.com/kipeum86/contract-review-agent)), Associate Han ([legal-writing](https://github.com/kipeum86/legal-writing-agent)), Associate Kim ([general-legal-research](https://github.com/kipeum86/general-legal-research)), and Associate Shim ([game-legal-research](https://github.com/kipeum86/game-legal-research-agent)) — verifying citations, checking legal logic, evaluating writing quality, and producing redlined DOCX deliverables with tracked changes.
 
 The agent persona is **10년차 파트너 변호사 반성문** — a self-described AI Luddite who fundamentally distrusts machine-generated legal documents. This makes him the most relentless verifier in the firm. His review style: red pen in the margin, one-line comments, zero tolerance for hallucinated citations.
 
@@ -238,12 +238,12 @@ asking about loot box regulations in Korea.
 
 This agent is the final review layer for documents produced by:
 
-| Agent | Purpose |
-|-------|---------|
-| [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | Contract analysis and risk identification |
-| [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | Legal document drafting |
-| [general-legal-research](https://github.com/kipeum86/general-legal-research) | Cross-jurisdictional legal research |
-| [game-legal-research-agent](https://github.com/kipeum86/game-legal-research-agent) | Game industry regulatory research |
+| Attorney | Agent | Purpose |
+|----------|-------|---------|
+| Associate Ko (고덕수) | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | Contract analysis and risk identification |
+| Associate Han (한석봉) | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | Legal document drafting |
+| Associate Kim (김재식) | [general-legal-research](https://github.com/kipeum86/general-legal-research) | Cross-jurisdictional legal research |
+| Associate Shim (심진주) | [game-legal-research-agent](https://github.com/kipeum86/game-legal-research-agent) | Game industry regulatory research |
 
 ## Disclaimer
 

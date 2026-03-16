@@ -12,12 +12,22 @@ Compute per-dimension review scores, overall grade, and independent release reco
 2. **Overall Grade Computation**
    - Average of all applicable dimension scores
    - A (avg ≥ 8.5), B (avg ≥ 7.0), C (avg ≥ 5.0), D (avg < 5.0)
+   - **Skipped Dimension Handling**: If a dimension is skipped (e.g., Dim 3 when no client context), set `score: null, skipped: true, skip_reason: "..."` in scorecard. Exclude from average: `overall_average = sum(non-null scores) / count(non-null scores)`. Skipped dimensions are NOT treated as 0.
+   - **Grade Constraint**: Grade MUST be exactly one of **A**, **B**, **C**, **D**. No plus/minus modifiers (no "C+", "B-", etc.)
 
 3. **Release Recommendation** (independent safety gate)
    - **Release Not Recommended**: Any Dim 1–3 Critical finding; OR any `Nonexistent` citation on dispositive conclusion
    - **Manual Review Required**: Any `Unverifiable` citation on key conclusion; OR Dim 2 has ≥2 Major findings
    - **Pass with Warnings**: No Dim 1–3 Criticals, but Majors exist in any dimension; OR grade < B
    - **Pass**: No Critical or Major findings; grade ≥ B
+   - **Constraint**: `release_recommendation` MUST be exactly one of these four string values. Do NOT use free-form text. Use `release_rationale` for the explanation.
+   - **Evaluation order**: top-to-bottom, first match wins:
+     ```
+     if any Critical in Dim 1–3 OR any Nonexistent on dispositive conclusion → "Release Not Recommended"
+     elif any Unverifiable on key conclusion OR Dim 2 Major count >= 2 → "Manual Review Required"
+     elif no Dim 1–3 Criticals AND (any Major OR grade < B) → "Pass with Warnings"
+     else → "Pass"
+     ```
 
 4. **Issue Consolidation**
    - Merge all findings from Steps 3–5 into `issue-registry.json`
@@ -63,15 +73,15 @@ Grade measures overall quality. Release recommendation is a safety gate. They ar
 ```json
 {
   "dimensions": {
-    "1_citation": {"score": 6, "findings_count": {"Critical": 1, "Major": 0, "Minor": 2}},
-    "2_substance": {"score": 8, "findings_count": {}},
-    "3_alignment": {"score": 9, "findings_count": {}},
-    "4_writing": {"score": 7, "findings_count": {}},
-    "5_structure": {"score": 9, "findings_count": {}},
-    "6_formatting": {"score": 8, "findings_count": {}}
+    "1_citation": {"score": 6, "skipped": false, "findings_count": {"Critical": 1, "Major": 0, "Minor": 2}},
+    "2_substance": {"score": 8, "skipped": false, "findings_count": {}},
+    "3_alignment": {"score": null, "skipped": true, "skip_reason": "No client context provided", "findings_count": {}},
+    "4_writing": {"score": 7, "skipped": false, "findings_count": {}},
+    "5_structure": {"score": 9, "skipped": false, "findings_count": {}},
+    "6_formatting": {"score": 8, "skipped": false, "findings_count": {}}
   },
   "overall_grade": "B",
-  "overall_average": 7.8,
+  "overall_average": 7.6,
   "release_recommendation": "Manual Review Required",
   "release_rationale": "Dim 1에 Critical finding 1건 (CIT-003: Nonexistent citation)"
 }

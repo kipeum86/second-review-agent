@@ -65,6 +65,16 @@ Validate a YAML checklist file against the expected schema.
 - Post-review: when `known-issues-manager` proposes a new pattern
 - Onboarding: when setting up library for a new document author/agent
 
+## Sample Quality Guidelines
+
+Good samples for style fingerprinting should be:
+- **Final versions** (not drafts or work-in-progress)
+- **Same document type** as the documents under review (e.g., advisory opinions for advisory review)
+- **Same originating agent** if comparing against a specific agent's output
+- **At least 3 pages** in length (short documents don't provide reliable style metrics)
+- **Free of known critical issues** (samples with hallucinated citations skew metrics)
+- **Representative** of the agent's typical output (not edge cases or unusual formats)
+
 ## Checkpoint
 
 Library management operations (WF4) do not use the checkpoint system — they are atomic operations that complete immediately.

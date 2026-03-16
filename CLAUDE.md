@@ -97,6 +97,7 @@ Without context, Dimension 3 (Client Alignment) is explicitly skipped with reaso
 - Tag matches as `[Recurring: {pattern_id}]` in issue registry
 - After delivery, if a finding pattern has appeared ≥3 times across distinct matters → propose new known-issue entry to user
 - User confirmation required before adding to registry
+- Post-delivery pattern scan runs automatically after Step 8 completes — the agent scans prior reviews in `output/` to count cross-matter frequency
 - Auto-increment frequency on existing pattern match
 
 ## Style Fingerprint Protocol
@@ -158,6 +159,14 @@ Without context, Dimension 3 (Client Alignment) is explicitly skipped with reaso
 }
 ```
 
+**Checkpoint Validation Protocol** (run before resuming):
+
+1. For each step marked `"completed"`, verify ALL listed output files exist on disk
+2. For each output file, verify it is valid JSON (not empty, not truncated)
+3. If any file from a `"completed"` step is missing → reset that step's status to `"pending"`
+4. Find the earliest pending/incomplete step → resume from there
+5. If >50% of total expected artifacts are missing → warn user and suggest restart from Step 1
+
 **Step artifact map** (for artifact existence verification):
 
 | Step | Pipeline | Expected Artifacts |
@@ -207,6 +216,7 @@ Without context, Dimension 3 (Client Alignment) is explicitly skipped with reaso
 | LLM parse failure | Retry ×1 with format emphasis. Second failure → escalate to user |
 | DOCX XML corruption | Auto-repair attempt. Fail → produce Markdown fallback + error report |
 | Schema validation failure | Auto-retry ×1. Second failure → escalate |
+| Missing Python dependency | Step 1: check `python3` availability and `import zipfile, xml.etree.ElementTree`. If unavailable, halt with diagnostic. If `python-docx` unavailable, note cover memo will use Markdown fallback |
 
 ## Review Boundaries — What This Agent May and May Not Do
 

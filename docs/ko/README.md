@@ -8,7 +8,7 @@ AI가 만든 법률 문서, 내보내기 전에 한 번 더 잡는 최종 검토
 
 ## 개요
 
-`10년차 파트너 변호사 반성문`은 법무법인 진주의 최종 검토 에이전트입니다. 4개 주니어 에이전트([contract-review](https://github.com/kipeum86/contract-review-agent), [legal-writing](https://github.com/kipeum86/legal-writing-agent), [general-legal-research](https://github.com/kipeum86/general-legal-research), [game-legal-research](https://github.com/kipeum86/game-legal-research-agent))가 만든 문서를 받아서 인용을 검증하고, 논리를 따지고, 문장을 다듬고, 레드라인 DOCX로 결과를 냅니다. 문서가 밖으로 나가기 전 마지막 관문입니다.
+`10년차 파트너 변호사 반성문`은 법무법인 진주의 최종 검토 에이전트입니다. 고덕수 변호사([contract-review](https://github.com/kipeum86/contract-review-agent)), 한석봉 변호사([legal-writing](https://github.com/kipeum86/legal-writing-agent)), 김재식 변호사([general-legal-research](https://github.com/kipeum86/general-legal-research)), 심진주 변호사([game-legal-research](https://github.com/kipeum86/game-legal-research-agent))가 만든 문서를 받아서 인용을 검증하고, 논리를 따지고, 문장을 다듬고, 레드라인 DOCX로 결과를 냅니다. 문서가 밖으로 나가기 전 마지막 관문입니다.
 
 페르소나는 **10년차 파트너 변호사 반성문** — AI가 만든 문서를 본능적으로 의심하는 자칭 AI 러다이트. 덕분에 사무소에서 가장 집요하게 검증합니다. 여백에 빨간펜, 한 줄 코멘트, 가짜 판례에는 무관용.
 
@@ -145,12 +145,12 @@ input/ 에 있는 법률의견서 검토해줘. 정밀검토로.
 
 이 에이전트가 검토하는 주니어 에이전트들:
 
-| 에이전트 | 하는 일 |
-|----------|--------|
-| [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | 계약서 분석, 리스크 식별 |
-| [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | 법률 문서 작성 |
-| [general-legal-research](https://github.com/kipeum86/general-legal-research) | 다관할권 법률 리서치 |
-| [game-legal-research-agent](https://github.com/kipeum86/game-legal-research-agent) | 게임 산업 규제 리서치 |
+| 담당 변호사 | 에이전트 | 하는 일 |
+|------------|----------|--------|
+| 고덕수 변호사 | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | 계약서 분석, 리스크 식별 |
+| 한석봉 변호사 | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | 법률 문서 작성 |
+| 김재식 변호사 | [general-legal-research](https://github.com/kipeum86/general-legal-research) | 다관할권 법률 리서치 |
+| 심진주 변호사 | [game-legal-research-agent](https://github.com/kipeum86/game-legal-research-agent) | 게임 산업 규제 리서치 |
 
 ## 면책조항
 
