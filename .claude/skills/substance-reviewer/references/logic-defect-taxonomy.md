@@ -124,6 +124,38 @@ Common logical defects in legal documents, with definitions, examples, and typic
 
 ---
 
+## 13. Secondary Source Reliance (2차 소스 의존)
+
+**Definition**: Drawing a legal conclusion or supporting a key argument by citing a non-primary source (news article, blog post, law firm newsletter, commentary, textbook summary) as though it carries the same authority as primary law (statute, regulation, court decision, official gazette).
+
+**Example (KR)**: "법률신문 기사에 따르면 해당 조항은 무효로 해석된다" — citing a legal newspaper article as the basis for a conclusion about statutory invalidity, without citing the actual court decision or statute that supports this position.
+
+**Example (US)**: "According to a client alert from [Law Firm], the SEC has taken the position that..." — citing a law firm publication as authority for a regulatory position, without citing the actual SEC release, no-action letter, or rulemaking.
+
+**Why this matters**: Secondary sources summarize, interpret, or editorialize primary law. They may be inaccurate, outdated, or reflect the author's advocacy position. A legal conclusion resting on secondary sources alone is unsupported — the underlying primary authority must be cited and analyzed.
+
+**Detection heuristic**: For each citation supporting a dispositive or key conclusion, check the source authority tier (see citation-checker Source Authority Classification). Flag any Tier 3–4 source used as the sole or primary support for a legal conclusion.
+
+**Typical severity**: Major (Critical if the conclusion is dispositive and no primary source exists anywhere in the document for that proposition)
+
+---
+
+## 14. Source Authority Misrepresentation (소스 권위 위장)
+
+**Definition**: Paraphrasing or restating content from a secondary or tertiary source in a way that makes it appear to be the author's own primary legal analysis, or that obscures the non-authoritative origin of the information. The source is either not cited at all, or cited in a way that disguises its nature.
+
+**Example (KR)**: A paragraph analyzing 개인정보보호법 enforcement trends that closely follows a 법률신문 commentary article, presented as original analysis without attribution — or attributed vaguely as "실무상" or "통설에 의하면" without identifying the actual source.
+
+**Example (US)**: Restating a Westlaw practice note's analysis of a circuit split as though it were the author's independent case law review, without citing the practice note or the underlying cases it summarized.
+
+**Why this matters**: This is a form of source laundering. It conceals the reliability level of the underlying information and prevents the reader (or reviewer) from evaluating source quality. It also creates a false impression of independent analysis where none was performed. In AI-generated documents, this pattern is especially dangerous because the model may synthesize information from training data without any citable source at all.
+
+**Detection heuristic**: Look for assertions of legal fact or analysis that lack any citation but read as summaries of external content (e.g., enforcement statistics, practice trends, multi-jurisdictional comparisons). Cross-reference with verification-audit.json for sections with low citation density relative to the specificity of claims made.
+
+**Typical severity**: Major (Critical if the misrepresented content is factually wrong or if it forms the basis of a key recommendation)
+
+---
+
 ## Severity Guide Summary
 
 | Defect | Default Severity | Escalate to Critical if... |
@@ -140,3 +172,5 @@ Common logical defects in legal documents, with definitions, examples, and typic
 | Post Hoc Reasoning | Major | — |
 | Equivocation | Minor | ...affects conclusion |
 | Incomplete Coverage | Major | ...omitted issue is dispositive |
+| Secondary Source Reliance | Major | ...conclusion is dispositive with no primary source cited |
+| Source Authority Misrepresentation | Major | ...misrepresented content is factually wrong or supports key recommendation |

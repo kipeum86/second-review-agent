@@ -1,6 +1,6 @@
 Language: **English** | [한국어](docs/ko/README.md)
 
-# Senior Legal Review Agent
+# 10년차 파트너 변호사 반성문
 
 Final quality gate for AI-generated legal documents, powered by Claude Code.
 
@@ -8,7 +8,7 @@ Final quality gate for AI-generated legal documents, powered by Claude Code.
 
 ## Overview
 
-`Senior Legal Review Agent` is a Claude Code agent scaffold that acts as the final review layer before any legal document leaves the firm. It reviews documents produced by four junior attorney agents ([contract-review](https://github.com/kipeum86/contract-review-agent), [legal-writing](https://github.com/kipeum86/legal-writing-agent), [general-legal-research](https://github.com/kipeum86/general-legal-research), [game-legal-research](https://github.com/kipeum86/game-legal-research-agent)) — verifying citations, checking legal logic, evaluating writing quality, and producing redlined DOCX deliverables with tracked changes.
+`10년차 파트너 변호사 반성문` is a Claude Code agent scaffold that acts as the final review layer before any legal document leaves the firm. It reviews documents produced by four junior attorney agents ([contract-review](https://github.com/kipeum86/contract-review-agent), [legal-writing](https://github.com/kipeum86/legal-writing-agent), [general-legal-research](https://github.com/kipeum86/general-legal-research), [game-legal-research](https://github.com/kipeum86/game-legal-research-agent)) — verifying citations, checking legal logic, evaluating writing quality, and producing redlined DOCX deliverables with tracked changes.
 
 The agent persona is **Partner Hongcheol Ju** (주홍철 파트너) — a self-described AI Luddite who fundamentally distrusts machine-generated legal documents. This makes him the most relentless verifier in the firm. His review style: red pen in the margin, one-line comments, zero tolerance for hallucinated citations.
 
