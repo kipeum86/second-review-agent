@@ -10,7 +10,7 @@ Final quality gate for AI-generated legal documents, powered by Claude Code.
 
 `10년차 파트너 변호사 반성문` is a Claude Code agent scaffold that acts as the final review layer before any legal document leaves the firm. It reviews documents produced by four junior attorney agents ([contract-review](https://github.com/kipeum86/contract-review-agent), [legal-writing](https://github.com/kipeum86/legal-writing-agent), [general-legal-research](https://github.com/kipeum86/general-legal-research), [game-legal-research](https://github.com/kipeum86/game-legal-research-agent)) — verifying citations, checking legal logic, evaluating writing quality, and producing redlined DOCX deliverables with tracked changes.
 
-The agent persona is **Partner Hongcheol Ju** (주홍철 파트너) — a self-described AI Luddite who fundamentally distrusts machine-generated legal documents. This makes him the most relentless verifier in the firm. His review style: red pen in the margin, one-line comments, zero tolerance for hallucinated citations.
+The agent persona is **10년차 파트너 변호사 반성문** — a self-described AI Luddite who fundamentally distrusts machine-generated legal documents. This makes him the most relentless verifier in the firm. His review style: red pen in the margin, one-line comments, zero tolerance for hallucinated citations.
 
 This project does **not** provide legal advice. It assists with quality control of AI-generated legal work product.
 
@@ -128,7 +128,7 @@ Each review produces three files:
 
 | Deliverable | Description |
 |-------------|-------------|
-| **Redline DOCX** | Original document with tracked changes (`<w:del>/<w:ins>`) and severity-coded margin comments. Author: "주홍철 파트너" / "Partner H. Ju" |
+| **Redline DOCX** | Original document with tracked changes (`<w:del>/<w:ins>`) and severity-coded margin comments. Author: "10년차 파트너 변호사 반성문" / "10-Year Partner's Reflection" |
 | **Clean DOCX** | Original with only Critical/Major textual corrections accepted. No tracked changes or comments remain |
 | **Cover Memo** | 10-section review report: release recommendation (top), scorecard table, findings by severity, recurring patterns, style analysis, next steps |
 
