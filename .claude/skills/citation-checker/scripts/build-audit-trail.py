@@ -24,6 +24,7 @@ VALID_STATUSES = {
     'Nonexistent', 'Wrong_Pinpoint', 'Unsupported_Proposition',
     'Wrong_Jurisdiction', 'Stale', 'Translation_Mismatch',
     'Unverifiable_No_Access', 'Unverifiable_Secondary_Only', 'Unverifiable_No_Evidence',
+    'Unverifiable_Synthetic_Suspected',
 }
 
 PRIMARY_STATUS_MAP = {
@@ -37,6 +38,7 @@ PRIMARY_STATUS_MAP = {
     'Unverifiable_No_Access': 'unverifiable',
     'Unverifiable_Secondary_Only': 'unverifiable',
     'Unverifiable_No_Evidence': 'unverifiable',
+    'Unverifiable_Synthetic_Suspected': 'unverifiable',
 }
 
 REQUIRED_FIELDS = ['citation_text', 'citation_type', 'verification_status']
@@ -62,7 +64,47 @@ def validate_entry(entry: dict, idx: int) -> list[str]:
                 f"(search query and/or URL). Consider 'Unverifiable_No_Evidence' instead."
             )
 
+    # Validate authority_tier if present (optional — warn but don't fail)
+    tier = entry.get('authority_tier')
+    if tier is not None:
+        if not isinstance(tier, int) or tier not in (1, 2, 3, 4):
+            errors.append(f"Citation {idx}: authority_tier must be integer 1-4, got '{tier}'")
+        if 'authority_label' not in entry:
+            errors.append(f"Citation {idx}: authority_tier present but authority_label missing")
+
     return errors
+
+
+def compute_source_authority_summary(citations: list[dict]) -> dict:
+    """Compute source authority summary from citations with authority_tier fields."""
+    tier_dist = {'tier_1': 0, 'tier_2': 0, 'tier_3': 0, 'tier_4': 0}
+    conclusion_by_tier = {'tier_1': 0, 'tier_2': 0, 'tier_3': 0, 'tier_4': 0}
+    high_risk = []
+
+    for c in citations:
+        tier = c.get('authority_tier')
+        if tier is None:
+            continue
+        tier_key = f'tier_{tier}'
+        if tier_key in tier_dist:
+            tier_dist[tier_key] += 1
+        supports = c.get('supports_conclusion', False)
+        if supports and tier_key in conclusion_by_tier:
+            conclusion_by_tier[tier_key] += 1
+            if tier >= 3:
+                high_risk.append({
+                    'citation_id': c.get('citation_id', ''),
+                    'authority_tier': tier,
+                    'supports_conclusion': True,
+                    'conclusion_location': c.get('conclusion_location'),
+                    'risk': f"Tier {tier} source used to support conclusion",
+                })
+
+    return {
+        'tier_distribution': tier_dist,
+        'conclusion_support_by_tier': conclusion_by_tier,
+        'high_risk_citations': high_risk,
+    }
 
 
 def compute_summary(citations: list[dict]) -> dict:
@@ -98,6 +140,13 @@ def build_audit_trail(citations: list[dict], review_depth: str = 'standard') -> 
 
     summary = compute_summary(citations)
 
+    # Compute source authority summary if any citation has authority_tier
+    has_authority = any(c.get('authority_tier') is not None for c in citations)
+    authority_summary = compute_source_authority_summary(citations) if has_authority else None
+    if not has_authority and citations:
+        print("Warning: No authority_tier fields found in citations. Source authority summary skipped.",
+              file=sys.stderr)
+
     audit = {
         'review_depth': review_depth,
         'total_citations': len(citations),
@@ -106,6 +155,8 @@ def build_audit_trail(citations: list[dict], review_depth: str = 'standard') -> 
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'citations': citations,
     }
+    if authority_summary:
+        audit['source_authority_summary'] = authority_summary
 
     return audit
 

@@ -1,10 +1,20 @@
 # redline-generator Skill
 
-Apply tracked changes and margin comments to DOCX for review output generation.
+Apply margin comments and tracked changes to DOCX for review output generation. Phase 1 (current): comment-only redline using `scripts/add-docx-comments.py`. Phase 2 (future): tracked changes with `<w:del>`/`<w:ins>`.
 
 ## Capabilities
 
-1. **Redline DOCX Generation** (LLM + DOCX XML manipulation)
+0. **Comment-Only Redline** (Phase 1 — `scripts/add-docx-comments.py`)
+   - Copy original DOCX (**never modify the original**)
+   - Insert margin comments for ALL findings from issue-registry.json
+   - Each comment: severity prefix + description + recommendation
+   - Paragraph mapping: paragraph_index → regex parse → text search fallback → unmapped collection
+   - Usage: `python3 add-docx-comments.py <input_docx> <issue_registry_json> <output_docx>`
+   - Output: annotated DOCX with comments attached to relevant paragraphs
+   - Unmapped issues collected in a final comment at document end
+   - Stdlib only (zipfile + xml.etree.ElementTree) — no python-docx dependency
+
+1. **Redline DOCX with Tracked Changes** (Phase 2 — future)
    - Copy original DOCX (**never modify the original**)
    - Unzip copy → parse `word/document.xml`
    - For each finding in issue-registry.json:
@@ -33,16 +43,18 @@ Original DOCX (in input/)
     │
     ├── Copy to working/ (PRESERVE ORIGINAL)
     │
-    ├── Unzip copy (zipfile)
+    ├── Phase 1: Comment-Only Redline (CURRENT)
+    │   ├── Run add-docx-comments.py <input> <issue-registry> <output>
+    │   ├── Maps issues to paragraphs (index → regex → keyword search)
+    │   ├── Inserts <w:comment> + range markers for each issue
+    │   ├── Creates/updates comments.xml, rels, content types
+    │   └── Output: {doc}_redline_v{N}.docx (with margin comments)
     │
-    ├── Parse document.xml
-    │   ├── Map issue locations to <w:p> elements (text matching)
+    ├── Phase 2: Tracked Changes (FUTURE)
     │   ├── Insert <w:del>/<w:ins> for textual corrections
-    │   └── Insert <w:commentRangeStart/End> + comments.xml
+    │   └── Requires: run splitting, format preservation
     │
-    ├── Repack → {doc}_redline_v{N}.docx
-    │
-    └── Accept Critical/Major changes only → {doc}_clean_v{N}.docx
+    └── Clean DOCX: accept Critical/Major corrections → {doc}_clean_v{N}.docx
 ```
 
 ## OOXML Tracked Changes Format
@@ -104,11 +116,14 @@ Reference patterns from `contract-review-agent/.claude/skills/docx-redliner/scri
 
 ## Paragraph Mapping Strategy
 
-1. For each issue in issue-registry, get the `paragraph_index` from location
-2. Map to `<w:p>` elements by counting paragraphs in document.xml
-3. If index mapping fails → use text matching (search for text excerpt in `<w:t>` elements)
-4. If text matching fails → log unmapped issue, include in report only (no inline markup)
-5. Target: ≥90% mapping coverage
+For each issue in issue-registry.json, apply these strategies in order:
+
+1. **Primary**: `location.paragraph_index` as integer → count `<w:p>` elements in `<w:body>`
+2. **Fallback 1**: Parse paragraph number from location string fields (regex: `para(?:graph)?\s*(\d+)`)
+3. **Fallback 2**: Keyword search — extract keywords from issue description, find paragraph with highest keyword overlap in `<w:t>` text content
+4. **Fallback 3**: Unmapped — collect all unmapped issues in a single comment attached to the last paragraph
+
+Target: ≥90% mapping success rate. Script outputs JSON summary with mapping statistics.
 
 ## Checkpoint
 

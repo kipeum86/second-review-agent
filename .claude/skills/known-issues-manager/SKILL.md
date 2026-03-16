@@ -20,6 +20,17 @@ Match review findings against known recurring patterns and manage the known-issu
    - Present proposed pattern to user for confirmation before adding
    - Never auto-add patterns without user approval
 
+4. **Post-Delivery Trigger Protocol** (automatic after Step 8)
+   - After Step 8 (quality-gate) completes, automatically scan for recurring patterns:
+     1. Load current review's `issue-registry.json`
+     2. Group findings by `(dimension, defect_type)` — if `defect_type` absent, use description keyword extraction
+     3. For each group with ≥2 findings in current review:
+        a. Scan all prior review outputs: `output/*/round_*/working/issue-registry.json`
+        b. Count distinct `matter_id`s where similar findings appeared
+        c. Two findings are "similar" if they share the same dimension AND (`defect_type` matches OR description keyword overlap > 50%)
+     4. If total distinct matters ≥ 3 → propose new pattern to user
+   - This runs automatically; no user invocation required
+
 ## When to Use
 
 - WF1 Step 6: check findings against existing patterns
@@ -74,6 +85,20 @@ File: `library/known-issues/{agent-name}.json`
 
 이 패턴을 Known Issues 레지스트리에 추가할까요? (Y/N)
 ```
+
+### English Proposal Format
+```
+Recurring pattern detected:
+
+Pattern: [description]
+Dimension: Dimension [N]
+Frequency: [N] occurrences across [N] distinct matters
+Originating agent: [agent-name]
+
+Add this pattern to the Known Issues registry? (Y/N)
+```
+
+Use document language for the proposal. If document is English, use the English template.
 
 ## References
 - `references/known-issues-schema.md` — full schema documentation
