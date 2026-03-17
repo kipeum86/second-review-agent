@@ -1,6 +1,6 @@
 Language: **English** | [한국어](docs/ko/README.md)
 
-# 10년차 파트너 변호사 반성문
+# Second Review Agent
 
 Final quality gate for AI-generated legal documents, powered by Claude Code.
 
@@ -8,9 +8,9 @@ Final quality gate for AI-generated legal documents, powered by Claude Code.
 
 ## Overview
 
-`10년차 파트너 변호사 반성문` is a Claude Code agent scaffold that acts as the final review layer before any legal document leaves the firm. It reviews documents produced by Associate Ko ([contract-review](https://github.com/kipeum86/contract-review-agent)), Associate Han ([legal-writing](https://github.com/kipeum86/legal-writing-agent)), Associate Kim ([general-legal-research](https://github.com/kipeum86/general-legal-research)), and Associate Shim ([game-legal-research](https://github.com/kipeum86/game-legal-research-agent)) — verifying citations, checking legal logic, evaluating writing quality, and producing redlined DOCX deliverables with tracked changes.
+Second Review Agent is a Claude Code agent scaffold that acts as the final review layer before any legal document leaves the firm. It reviews documents produced by Associate Ko ([contract-review](https://github.com/kipeum86/contract-review-agent)), Associate Han ([legal-writing](https://github.com/kipeum86/legal-writing-agent)), Associate Kim ([general-legal-research](https://github.com/kipeum86/general-legal-research)), and Associate Shim ([game-legal-research](https://github.com/kipeum86/game-legal-research-agent)) — verifying citations, checking legal logic, evaluating writing quality, and producing redlined DOCX deliverables with tracked changes.
 
-The agent persona is **10년차 파트너 변호사 반성문** — a self-described AI Luddite who fundamentally distrusts machine-generated legal documents. This makes him the most relentless verifier in the firm. His review style: red pen in the margin, one-line comments, zero tolerance for hallucinated citations.
+The agent persona is **10-Year Partner's Reflection** — a self-described AI Luddite who fundamentally distrusts machine-generated legal documents. This makes him the most relentless verifier in the firm. His review style: red pen in the margin, one-line comments, zero tolerance for hallucinated citations.
 
 This project does **not** provide legal advice. It assists with quality control of AI-generated legal work product.
 
@@ -53,7 +53,7 @@ Session state is checkpointed after every step in `output/{matter_id}/checkpoint
 | 1 | Citation & Fact Verification | Do cited authorities exist? Correct pinpoint? Support the claimed proposition? |
 | 2 | Legal Substance & Logic | Sound reasoning? Logical gaps? Counterarguments addressed? |
 | 3 | Client Alignment | Does the document answer the actual question? Practical implications included? |
-| 4 | Writing Quality | Register consistency, terminology, translationese (번역투), style fingerprint |
+| 4 | Writing Quality | Register consistency, terminology, translationese, style fingerprint |
 | 5 | Structural Integrity | Numbering continuity, cross-reference validity, defined-term consistency |
 | 6 | Formatting & Presentation | Font/size consistency, heading hierarchy, margin uniformity, professional appearance |
 | 7 | Cross-Document Consistency | (WF2 only) Factual/terminological/date consistency across related documents |
@@ -81,9 +81,9 @@ The agent classifies every citation into one of three primary statuses:
 
 | Level | When | Citation Scope |
 |-------|------|----------------|
-| **Quick Scan** | "빨리", "훑어봐", internal memo, early draft | Format validation only; escalate failures |
+| **Quick Scan** | "quick scan", internal memo, early draft | Format validation only; escalate failures |
 | **Standard** (default) | General review | Dual-track for dispositive citations |
-| **Deep Review** | "법원 제출용", court filing, external opinion | Dual-track for all citations |
+| **Deep Review** | "deep review", court filing, external opinion | Dual-track for all citations |
 
 ## Scoring & Release
 
@@ -128,7 +128,7 @@ Each review produces three files:
 
 | Deliverable | Description |
 |-------------|-------------|
-| **Redline DOCX** | Original document with tracked changes (`<w:del>/<w:ins>`) and severity-coded margin comments. Author: "10년차 파트너 변호사 반성문" / "10-Year Partner's Reflection" |
+| **Redline DOCX** | Original document with tracked changes (`<w:del>/<w:ins>`) and severity-coded margin comments. Author: "10-Year Partner's Reflection" |
 | **Clean DOCX** | Original with only Critical/Major textual corrections accepted. No tracked changes or comments remain |
 | **Cover Memo** | 10-section review report: release recommendation (top), scorecard table, findings by severity, recurring patterns, style analysis, next steps |
 
@@ -203,14 +203,14 @@ Six default checklists are included: advisory opinion (KR/EN), research report, 
 
 1. Clone this repo and open the directory in Claude Code.
 2. Drop a DOCX file into `input/`.
-3. Run `/review` or simply ask: "이거 검토해줘" / "Review this document."
+3. Run `/review` or simply ask: "Review this document."
 4. The agent runs the 8-step pipeline and produces deliverables in `output/`.
 5. Interrupted sessions resume automatically from the last checkpoint.
 
 **Example prompts:**
 
 ```text
-input/ 에 있는 법률의견서 검토해줘. 정밀검토로.
+Review the advisory opinion in input/. Deep review.
 ```
 
 ```text
@@ -219,20 +219,20 @@ asking about loot box regulations in Korea.
 ```
 
 ```text
-/cross-review — input/ 에 리서치 리포트랑 법률의견서 두 개 있어. 교차검토 해줘.
+/cross-review — There are a research report and an advisory opinion in input/. Run a cross-review.
 ```
 
 ```text
-/rereview — 수정본 올렸어. 이전 라운드 피드백 반영 확인해줘.
+/rereview — I've uploaded the revised version. Check if the previous round's feedback was addressed.
 ```
 
 ### Review depth selection
 
 | Say this | Agent infers |
 |----------|-------------|
-| "빨리 훑어봐", "quick scan" | Quick Scan |
+| "quick scan" | Quick Scan |
 | (nothing specific) | Standard (default) |
-| "정밀검토", "법원 제출용", "deep review" | Deep Review |
+| "deep review", "court filing" | Deep Review |
 
 ## Sibling Projects
 
@@ -240,10 +240,10 @@ This agent is the final review layer for documents produced by:
 
 | Attorney | Agent | Purpose |
 |----------|-------|---------|
-| Associate Ko (고덕수) | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | Contract analysis and risk identification |
-| Associate Han (한석봉) | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | Legal document drafting |
-| Associate Kim (김재식) | [general-legal-research](https://github.com/kipeum86/general-legal-research) | Cross-jurisdictional legal research |
-| Associate Shim (심진주) | [game-legal-research-agent](https://github.com/kipeum86/game-legal-research-agent) | Game industry regulatory research |
+| Associate Ko | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | Contract analysis and risk identification |
+| Associate Han | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | Legal document drafting |
+| Associate Kim | [general-legal-research](https://github.com/kipeum86/general-legal-research) | Cross-jurisdictional legal research |
+| Associate Shim | [game-legal-research-agent](https://github.com/kipeum86/game-legal-research-agent) | Game industry regulatory research |
 
 ## Disclaimer
 
