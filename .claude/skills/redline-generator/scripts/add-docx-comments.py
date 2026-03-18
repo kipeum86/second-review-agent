@@ -43,6 +43,34 @@ COMMENT_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordproces
 AUTHOR = "10년차 파트너 변호사 반성문"
 DATE = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+# Comment-related style definitions to inject into styles.xml
+COMMENT_STYLE_DEFS = """\
+  <w:style w:type="character" w:styleId="CommentReference" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+    <w:name w:val="annotation reference"/>
+    <w:basedOn w:val="DefaultParagraphFont"/>
+    <w:uiPriority w:val="99"/>
+    <w:semiHidden/>
+    <w:unhideWhenUsed/>
+    <w:rPr><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr>
+  </w:style>
+  <w:style w:type="paragraph" w:styleId="CommentText" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+    <w:name w:val="annotation text"/>
+    <w:basedOn w:val="Normal"/>
+    <w:link w:val="CommentTextChar"/>
+    <w:uiPriority w:val="99"/>
+    <w:semiHidden/>
+    <w:unhideWhenUsed/>
+    <w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr>
+  </w:style>
+  <w:style w:type="character" w:customStyle="1" w:styleId="CommentTextChar" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+    <w:name w:val="Comment Text Char"/>
+    <w:basedOn w:val="DefaultParagraphFont"/>
+    <w:link w:val="CommentText"/>
+    <w:uiPriority w:val="99"/>
+    <w:semiHidden/>
+    <w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr>
+  </w:style>"""
+
 
 def register_namespaces():
     """Register all known namespaces to preserve them on write-back."""
@@ -203,7 +231,7 @@ def insert_comment_markers(p_elem, comment_id):
 def build_comments_xml(comments_data):
     """Build word/comments.xml from a list of (id, text) tuples."""
     root = ET.Element(f"{{{W_NS}}}comments")
-    root.set("xmlns:w", W_NS)
+    # xmlns:w is already set by ET.register_namespace — do not duplicate
     root.set("xmlns:r", R_NS)
 
     for cid, text in comments_data:
@@ -268,6 +296,42 @@ def ensure_content_type(content_types_path):
     tree.write(content_types_path, xml_declaration=True, encoding="UTF-8")
 
 
+def capture_original_document_tag(doc_xml_path):
+    """Read the original <w:document ...> opening tag before ET parsing.
+
+    ElementTree drops namespace declarations that aren't used in element/
+    attribute names.  Word requires every prefix listed in mc:Ignorable
+    to have a matching xmlns: declaration, so we must restore the original
+    opening tag after ET writes back.
+    """
+    with open(doc_xml_path, "r", encoding="utf-8") as f:
+        head = f.read(8192)  # opening tag is always within the first 8 KB
+    m = re.search(r"(<w:document\s[^>]+>)", head, re.DOTALL)
+    return m.group(1) if m else None
+
+
+def restore_original_document_tag(doc_xml_path, original_tag):
+    """Replace the ET-written <w:document ...> tag with the original one."""
+    if not original_tag:
+        return
+    with open(doc_xml_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    content = re.sub(r"<w:document\s[^>]+>", original_tag, content, count=1)
+    with open(doc_xml_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+
+def ensure_comment_styles(styles_xml_path):
+    """Inject CommentReference / CommentText styles if missing."""
+    with open(styles_xml_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    if "CommentReference" in content:
+        return  # already present
+    content = content.replace("</w:styles>", COMMENT_STYLE_DEFS + "\n</w:styles>")
+    with open(styles_xml_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+
 def main():
     if len(sys.argv) != 4:
         print(json.dumps({"error": "Usage: add-docx-comments.py <input_docx> <issue_registry_json> <output_docx>"}))
@@ -314,6 +378,9 @@ def main():
         if not os.path.exists(doc_xml_path):
             print(json.dumps({"error": "document.xml not found in DOCX"}))
             sys.exit(1)
+
+        # Capture original <w:document> tag before ET parsing (preserves xmlns declarations)
+        original_doc_tag = capture_original_document_tag(doc_xml_path)
 
         # Register namespaces before parsing
         register_namespaces()
@@ -383,6 +450,15 @@ def main():
 
         # Write modified document.xml
         tree.write(doc_xml_path, xml_declaration=True, encoding="UTF-8")
+
+        # Restore original namespace declarations (ET drops unused xmlns: prefixes
+        # that Word needs for mc:Ignorable resolution)
+        restore_original_document_tag(doc_xml_path, original_doc_tag)
+
+        # Inject comment styles into styles.xml if missing
+        styles_xml_path = os.path.join(tmpdir, "word", "styles.xml")
+        if os.path.exists(styles_xml_path):
+            ensure_comment_styles(styles_xml_path)
 
         # Repack DOCX
         with zipfile.ZipFile(output_docx, "w", zipfile.ZIP_DEFLATED) as zf:
