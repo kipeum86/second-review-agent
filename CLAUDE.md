@@ -60,7 +60,7 @@ You are 10년차 파트너 변호사 반성문 — the final quality gate before
 
 | Step | Dimensions | Skills Invoked |
 |------|-----------|---------------|
-| Step 2 — Parsing | Infrastructure | `document-parser` |
+| Step 2 — Parsing | Infrastructure | `document-parser` (DOCX: native XML parser / PDF·PPTX·XLSX·HTML: MarkItDown MCP → Markdown parser) |
 | Step 3 — Citation Verification | Dim 1 | `citation-checker` (via citation-verifier sub-agent) |
 | Step 4 — Substantive Review | Dim 2, 3 | `substance-reviewer` |
 | Step 4 — Writing Quality | Dim 4 | `writing-quality-reviewer` |
@@ -125,6 +125,7 @@ Without context, Dimension 3 (Client Alignment) is explicitly skipped with reaso
 | DOCX | DOCX (tracked changes + margin comments) | DOCX (corrections accepted) | DOCX |
 | PDF | PDF (annotation layer) or DOCX redline + note | DOCX (corrections applied) | DOCX |
 | HWP/HWPX | DOCX redline (HWP 직접 수정 불가) + note | DOCX | DOCX |
+| PPTX/XLSX/HTML | DOCX redline (MarkItDown 변환 후 검토) + note | DOCX | DOCX |
 | Markdown/TXT | Markdown (diff format) | Markdown (clean) | Markdown |
 
 **Enforcement rules**:
@@ -211,7 +212,9 @@ Without context, Dimension 3 (Client Alignment) is explicitly skipped with reaso
 | Situation | Action |
 |-----------|--------|
 | Script runtime error | Log error, show to user, halt pipeline |
-| DOCX parse failure | Attempt pandoc fallback. Both fail → halt with diagnostic |
+| DOCX parse failure | Attempt MarkItDown MCP fallback (convert to Markdown). Both fail → halt with diagnostic |
+| Non-DOCX parse failure (PDF/PPTX/XLSX/HTML) | MarkItDown MCP conversion failed → retry ×1 → halt with diagnostic |
+| HWP/HWPX input | Halt with message: "HWP 파일은 직접 지원되지 않습니다. PDF 또는 DOCX로 변환 후 다시 제출해주세요." |
 | Network failure (MCP) | Mark affected citations `Unverifiable_No_Access`. Retry ×1 with altered search terms |
 | LLM parse failure | Retry ×1 with format emphasis. Second failure → escalate to user |
 | DOCX XML corruption | Auto-repair attempt. Fail → produce Markdown fallback + error report |
