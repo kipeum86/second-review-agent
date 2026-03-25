@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.transcript[-1].message // empty' | grep -qiE 'ingest|소스 추가|자료 넣|inbox|파일 올렸|파일 넣었' && echo '{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[Hook] 유저가 문서 인제스트를 요청했습니다. .claude/skills/ingest/SKILL.md를 읽고 /ingest 워크플로우를 실행하세요.\"}}' || echo '{}'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

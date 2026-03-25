@@ -30,6 +30,7 @@ This project does **not** provide legal advice. It assists with quality control 
 | `/cross-review` | WF2 — Cross-Document Review | Compare multiple related documents for factual/terminological/date consistency |
 | `/rereview` | WF3 — Re-review | Review a revised document against previous round findings |
 | `/library` | WF4 — Library Management | Manage writing samples, checklists, known-issue patterns, style profiles |
+| `/ingest` | WF5 — Source Ingest | Ingest reference sources (PDF, DOCX, etc.) into the graded library |
 
 ### WF1: Single Document Review (8 Steps)
 
@@ -104,12 +105,12 @@ The agent classifies every citation into one of three primary statuses:
 
 ```text
 Main agent (CLAUDE.md orchestrator)
-  |-- Skills (13):
+  |-- Skills (14):
   |     document-parser, citation-checker, substance-reviewer,
   |     writing-quality-reviewer, structure-checker, formatting-reviewer,
   |     scoring-engine, known-issues-manager, quality-gate,
   |     redline-generator, cover-memo-writer, cross-document-checker,
-  |     library-manager
+  |     library-manager, ingest
   |-- Sub-agent:
   |     citation-verifier (dispatched for Standard/Deep review)
   |-- Python scripts (13):
@@ -118,8 +119,8 @@ Main agent (CLAUDE.md orchestrator)
   |     numbering-validator.py, cross-reference-checker.py, docx-format-inspector.py,
   |     build-audit-trail.py, ingest-sample.py, build-style-profile.py,
   |     validate-checklist.py
-  `-- Slash commands (4):
-        /review, /cross-review, /rereview, /library
+  `-- Slash commands (5):
+        /review, /cross-review, /rereview, /library, /ingest
 ```
 
 ## Deliverables
@@ -144,6 +145,23 @@ The agent maintains a review library for pattern accumulation and style consiste
 | `library/style-profiles/` | Aggregated style fingerprint profiles | `/library style-profile regenerate` |
 
 Six default checklists are included: advisory opinion (KR/EN), research report, litigation filing, contract review report, and a general fallback.
+
+### Adding Reference Sources
+
+The agent maintains a graded source library for citation verification. Drop files into `library/inbox/` and run `/ingest`:
+
+1. Drop any file (PDF, DOCX, etc.) into `library/inbox/`
+2. Tell the agent: `/ingest` or "파일 넣었어"
+3. The agent will automatically:
+   - Convert to structured Markdown via MarkItDown
+   - Classify source grade (A: primary/B: secondary/C: academic)
+   - Generate metadata (YAML frontmatter)
+   - Place in the appropriate `library/grade-{a,b,c}/` folder
+   - Move originals to `library/inbox/_processed/`
+
+> **Note:** Dropping files alone does not trigger processing.
+> You must run `/ingest` or tell the agent (e.g. "inbox에 파일 넣었어")
+> to start the parsing pipeline.
 
 ## Repository Structure
 
@@ -174,8 +192,15 @@ Six default checklists are included: advisory opinion (KR/EN), research report, 
 |       |-- redline-generator/         # tracked changes + comments in DOCX
 |       |-- cover-memo-writer/         # 10-section review memo
 |       |-- cross-document-checker/    # cross-doc consistency (Dim 7)
-|       `-- library-manager/           # sample/checklist/profile management
+|       |-- library-manager/           # sample/checklist/profile management
+|       `-- ingest/                    # source file ingest into graded library
 |-- library/
+|   |-- inbox/                         # gitignored; drop source files here for /ingest
+|   |   |-- _processed/                # originals moved here after ingest
+|   |   `-- _failed/                   # files that failed conversion
+|   |-- grade-a/                       # gitignored; primary sources (statutes, guidelines)
+|   |-- grade-b/                       # gitignored; secondary sources (precedents, commentary)
+|   |-- grade-c/                       # gitignored; academic/reference sources
 |   |-- checklists/                    # 6 default YAML checklists
 |   |-- known-issues/                  # 4 per-agent JSON registries
 |   |-- samples/                       # gitignored; user writing samples

@@ -26,6 +26,7 @@ You are 10년차 파트너 변호사 반성문 — the final quality gate before
 | `/cross-review` | WF2 — Cross-Document Review | "cross-review", "교차검토", multiple related documents |
 | `/rereview` | WF3 — Re-review | "re-review", "재검토", "수정본", revised document submitted |
 | `/library` | WF4 — Library Management | "library", "라이브러리", "add-sample", "add-checklist", "known-issues", "style-profile" |
+| `/ingest` | WF5 — Source Ingest | "ingest", "소스 추가", "자료 넣었어", "inbox", "파일 올렸", "파일 넣었" |
 
 **Pipeline resume**: Before starting any pipeline, check for `checkpoint.json` in `output/{matter_id}/`. If found with `last_completed_step < final_step`, ask: "이전 검토가 Step {N}에서 중단되었습니다. Step {N+1}부터 재개할까요?" Verify artifact existence before resuming — see Resume Protocol below.
 
@@ -71,6 +72,7 @@ You are 10년차 파트너 변호사 반성문 — the final quality gate before
 | Step 8 — Self-Check | QA | `quality-gate` |
 | WF2 — Cross-Document | Dim 7 | `cross-document-checker` |
 | WF4 — Library | Management | `library-manager` |
+| WF5 — Source Ingest | Ingest | `ingest` |
 
 ## Redline Protocol
 
@@ -197,11 +199,32 @@ Without context, Dimension 3 (Client Alignment) is explicitly skipped with reaso
 5. Step counts: WF1=8, WF2=4, WF3=4
 6. **Checkpoint update discipline**: Update `checkpoint.json` immediately after each step completes — set `status: "completed"`, record `output` paths, set `completed_at`, advance `last_completed_step`, update `updated_at`
 
+## Source Ingest Protocol
+
+사용자가 외부 참조 소스 파일을 `library/inbox/`에 넣고 `/ingest`를 요청하면:
+
+1. `.claude/skills/ingest/SKILL.md`를 읽어 워크플로우 확인
+2. inbox 내 파일을 MarkItDown MCP로 .md 변환
+3. 내용 분석하여 Grade 자동 판별 (A/B/C, D는 거부)
+4. YAML frontmatter 생성 + 적절한 `library/grade-{a,b,c}/` 폴더로 배치
+5. 원본은 `library/inbox/_processed/`로 보존
+
+**Grade 체계:**
+
+| Grade | 소스 유형 | 예시 |
+|-------|----------|------|
+| A | 공식 1차 소스 | 법률, 시행령, 정부 가이드라인 |
+| B | 2차 소스 | 판례, 처분례, 로펌 뉴스레터 |
+| C | 학술/참고 | 학술 논문, 저널 기고 |
+| D | 비신뢰 소스 (거부) | 뉴스, AI 요약, 위키 |
+
+**리뷰 연동:** `library/grade-{a,b,c}/`의 소스들은 Citation Verification (Dim 1) 시 참조 자료로 활용된다.
+
 ## Folder Access Rules
 
 | Folder | Read | Write | Notes |
 |--------|------|-------|-------|
-| `input/` | Yes | No | User drops documents here |
+| `input/` | Yes | No | User drops review target documents here |
 | `output/` | Yes | Yes | Review results and deliverables |
 | `library/` | Yes | Yes | Managed via /library commands |
 | `docs/` | Yes | No | Reference documentation |
