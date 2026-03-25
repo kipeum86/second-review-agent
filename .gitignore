@@ -5,11 +5,21 @@ output/*
 # Library — track structure and defaults, ignore user-added content
 library/samples/*
 library/style-profiles/*
+library/inbox/*
+library/grade-a/*
+library/grade-b/*
+library/grade-c/*
 
 # Keep directory markers
 !input/.gitkeep
 !output/.gitkeep
 !library/**/.gitkeep
+!library/inbox/_processed/
+!library/inbox/_failed/
+library/inbox/_processed/*
+library/inbox/_failed/*
+!library/inbox/_processed/.gitkeep
+!library/inbox/_failed/.gitkeep
 
 # Python
 __pycache__/
