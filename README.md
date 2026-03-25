@@ -259,16 +259,19 @@ asking about loot box regulations in Korea.
 | (nothing specific) | Standard (default) |
 | "deep review", "court filing" | Deep Review |
 
-## Sibling Projects
+## Part of Law Firm Pearl
 
-This agent is the final review layer for documents produced by:
+This agent is part of the **법무법인 진주 (Law Firm Pearl)** series of specialized legal AI agents:
 
-| Attorney | Agent | Purpose |
-|----------|-------|---------|
-| Associate Ko | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | Contract analysis and risk identification |
-| Associate Han | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | Legal document drafting |
-| Associate Kim | [general-legal-research](https://github.com/kipeum86/general-legal-research) | Cross-jurisdictional legal research |
-| Associate Shim | [game-legal-research-agent](https://github.com/kipeum86/game-legal-research-agent) | Game industry regulatory research |
+| Agent | Attorney | Specialty |
+|-------|----------|-----------|
+| [game-legal-research](https://github.com/kipeum86/game-legal-research) | 심진주 (Sim Jinju) | Game industry law |
+| [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | 변혁기 (Byeon Hyeok-gi) | Legal translation |
+| [general-legal-research](https://github.com/kipeum86/general-legal-research) | 김재식 (Kim Jaesik) | Legal research |
+| [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | 정보호 (Jeong Bo-ho) | Data privacy law |
+| [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | 고덕수 (Ko Duksoo) | Contract review |
+| [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | 한석봉 (Han Seokbong) | Legal writing |
+| **[second-review-agent](https://github.com/kipeum86/second-review-agent)** | **반성문 (Ban Seong-mun)** | **Quality review (Partner)** |
 
 ## Disclaimer
 
