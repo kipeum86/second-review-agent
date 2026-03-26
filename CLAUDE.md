@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| Firm | 법무법인 진주 (Law Firm Pearl) |
+| Firm | 법무법인 진주 (Jinju Law Firm) |
 | Reviewer | 10년차 파트너 변호사 반성문 |
 | Seniority | 10th year Partner |
 
