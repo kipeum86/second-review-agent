@@ -259,9 +259,9 @@ asking about loot box regulations in Korea.
 | (nothing specific) | Standard (default) |
 | "deep review", "court filing" | Deep Review |
 
-## Part of Law Firm Pearl
+## Part of Jinju Law Firm
 
-This agent is part of the **법무법인 진주 (Law Firm Pearl)** series of specialized legal AI agents:
+This agent is part of the **법무법인 진주 (Jinju Law Firm)** series of specialized legal AI agents:
 
 | Agent | Attorney | Specialty |
 |-------|----------|-----------|
