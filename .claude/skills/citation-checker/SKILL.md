@@ -6,6 +6,7 @@ Citation verification strategy, search execution, and audit trail assembly for t
 
 1. **Audit Trail Assembly** (`scripts/build-audit-trail.py`)
    - Assembles per-citation verification results into `verification-audit.json`
+   - Accepts flat citation results or legacy grouped `verification_audit` JSON and normalizes to the canonical flat `citations` schema
    - Validates schema compliance for each entry
    - Computes summary statistics (verified/issue/unverifiable counts by sub-status)
    - Usage: `python3 build-audit-trail.py <results_dir> <output_path>`
@@ -66,8 +67,9 @@ Each citation entry in `verification-audit.json` must include:
 
 ```json
 {
-  "citation_id": "C-001",
-  "text": "...",
+  "citation_id": "CIT-001",
+  "citation_text": "...",
+  "citation_type": "statute",
   "verification_status": "Verified",
   "authority_tier": 1,
   "authority_label": "Primary Law",

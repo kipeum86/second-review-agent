@@ -12,10 +12,47 @@ import json
 import re
 
 
-def check_consistency(definitions: list[dict], full_text: str) -> list[dict]:
+def load_text_units(text_path: str) -> tuple[str, list[dict]]:
+    """Load either paragraph-aware units from parsed-structure.json or line-aware text."""
+    if text_path.endswith('.json'):
+        with open(text_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        paragraphs = data.get('paragraphs')
+        if isinstance(paragraphs, list) and paragraphs:
+            units = []
+            texts = []
+            for idx, para in enumerate(paragraphs):
+                para_text = str(para.get('text', ''))
+                if not para_text:
+                    continue
+                texts.append(para_text)
+                units.append({
+                    'paragraph_index': para.get('index', idx),
+                    'text': para_text,
+                })
+            return '\n'.join(texts), units
+        full_text = data.get('full_text', '')
+        return full_text, [{'line': i + 1, 'text': line} for i, line in enumerate(full_text.split('\n'))]
+
+    with open(text_path, 'r', encoding='utf-8') as f:
+        full_text = f.read()
+    return full_text, [{'line': i + 1, 'text': line} for i, line in enumerate(full_text.split('\n'))]
+
+
+def _build_location(unit: dict, text_excerpt: str | None = None) -> dict:
+    location = {}
+    if 'paragraph_index' in unit:
+        location['paragraph_index'] = unit['paragraph_index']
+    else:
+        location['line'] = unit.get('line', 1)
+    if text_excerpt:
+        location['text_excerpt'] = text_excerpt
+    return location
+
+
+def check_consistency(definitions: list[dict], full_text: str, units: list[dict]) -> list[dict]:
     """Check term consistency and find potential issues."""
     findings = []
-    lines = full_text.split('\n')
 
     for defn in definitions:
         term = defn['term']
@@ -45,10 +82,14 @@ def check_consistency(definitions: list[dict], full_text: str) -> list[dict]:
                 continue
             # Search for variant in text
             pattern = re.compile(re.escape(variant), re.IGNORECASE if defn.get('language') == 'EN' else 0)
-            for line_num, line in enumerate(lines):
-                for m in pattern.finditer(line):
+            for unit in units:
+                unit_text = unit.get('text', '')
+                for m in pattern.finditer(unit_text):
                     # Check it's not part of the definition itself
-                    if line_num == defn.get('definition_location', {}).get('paragraph_index', -1):
+                    if (
+                        'paragraph_index' in unit and
+                        unit['paragraph_index'] == defn.get('definition_location', {}).get('paragraph_index', -1)
+                    ):
                         continue
                     findings.append({
                         'type': 'variant_usage',
@@ -57,10 +98,10 @@ def check_consistency(definitions: list[dict], full_text: str) -> list[dict]:
                         'severity': 'Minor',
                         'description': f'정의된 용어 "{term}"의 변형 "{variant}"이(가) 사용됨',
                         'recommendation': f'일관성을 위해 정의된 형태 "{term}"으로 통일할 것',
-                        'location': {
-                            'line': line_num + 1,
-                            'text_excerpt': line[max(0, m.start()-20):m.end()+20].strip(),
-                        },
+                        'location': _build_location(
+                            unit,
+                            unit_text[max(0, m.start()-20):m.end()+20].strip(),
+                        ),
                     })
 
     # 3. Detect potential undefined terms (quoted terms that look like they should be defined)
@@ -68,24 +109,24 @@ def check_consistency(definitions: list[dict], full_text: str) -> list[dict]:
     defined_terms_lower = {d['term'].lower() for d in definitions}
 
     potential_undefined = set()
-    for line_num, line in enumerate(lines):
-        for m in undefined_pattern.finditer(line):
+    for unit in units:
+        unit_text = unit.get('text', '')
+        for m in undefined_pattern.finditer(unit_text):
             candidate = m.group(1).strip()
             if candidate.lower() not in defined_terms_lower and candidate not in potential_undefined:
                 # Check if it appears multiple times (suggesting it should be defined)
                 count = full_text.lower().count(candidate.lower())
                 if count >= 3:
                     potential_undefined.add(candidate)
+                    location = _build_location(unit)
+                    location['usage_count'] = count
                     findings.append({
                         'type': 'potential_undefined',
                         'term': candidate,
                         'severity': 'Suggestion',
                         'description': f'인용부호로 표시된 "{candidate}"이(가) {count}회 사용되었으나 정의되지 않음',
                         'recommendation': '반복 사용되는 용어라면 정의 조항에 추가하는 것을 검토',
-                        'location': {
-                            'line': line_num + 1,
-                            'usage_count': count,
-                        },
+                        'location': location,
                     })
 
     return findings
@@ -138,16 +179,9 @@ def main():
         terms_data = json.load(f)
     definitions = terms_data.get('definitions', [])
 
-    # Read text
-    if text_path.endswith('.json'):
-        with open(text_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            full_text = data.get('full_text', '')
-    else:
-        with open(text_path, 'r', encoding='utf-8') as f:
-            full_text = f.read()
+    full_text, units = load_text_units(text_path)
 
-    findings = check_consistency(definitions, full_text)
+    findings = check_consistency(definitions, full_text, units)
 
     by_type = {}
     for f_item in findings:

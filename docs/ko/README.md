@@ -14,6 +14,8 @@ AI가 만든 법률 문서, 내보내기 전에 한 번 더 잡는 최종 검토
 
 이 프로젝트는 법률 자문이 **아닙니다**. AI 산출물의 품질 관리를 돕는 도구입니다.
 
+초기 설계 메모는 [senior-legal-review-agent-design.md](../../senior-legal-review-agent-design.md)에 보관되어 있고, 현재 동작 기준은 `CLAUDE.md`와 `.claude/` 정의가 우선합니다.
+
 ## 설계 원칙
 
 - **리뷰도 틀리면 안 된다**: 리뷰 과정에서 환각을 만들지 않는 게 핵심. "없는 판례"라고 단정하려면 진짜 없다는 증거가 있어야 하고, 애매하면 "확인 불가"로 둠
@@ -30,6 +32,7 @@ AI가 만든 법률 문서, 내보내기 전에 한 번 더 잡는 최종 검토
 | `/cross-review` | WF2 — 교차 검토 | 관련 문서끼리 사실·용어·날짜가 맞는지 비교 |
 | `/rereview` | WF3 — 재검토 | 수정본이 이전 지적사항을 제대로 반영했는지 확인 |
 | `/library` | WF4 — 라이브러리 관리 | 샘플, 체크리스트, 반복 이슈, 스타일 프로필 관리 |
+| `/ingest` | WF5 — 소스 인제스트 | 참고 소스를 graded library로 변환·분류·배치 |
 
 ### WF1: 단일 문서 검토 (8단계)
 
@@ -45,6 +48,14 @@ AI가 만든 법률 문서, 내보내기 전에 한 번 더 잡는 최종 검토
 | 8 | 자체 검증 | `quality-gate` | 7항목 검증 보고서 |
 
 단계마다 `output/{matter_id}/checkpoint.json`에 진행 상태를 저장합니다. 중간에 끊겨도 이어서 할 수 있습니다.
+
+### 구현 메모
+
+- WF1 Step 6은 `scoring-engine/scripts/assemble-review-output.py`로 canonical `issue-registry.json` / `review-scorecard.json`을 정리합니다.
+- WF1 Step 7은 `redline-generator/scripts/add-docx-comments.py`로 레드라인/클린 DOCX를 만들고, `cover-memo-writer/scripts/generate-cover-memo.py`로 커버 메모 DOCX를 생성합니다.
+- WF1 Step 8은 `quality-gate/scripts/run-quality-gate.py`로 `quality-gate-report.json`을 생성합니다.
+- WF3 RR-2는 `document-parser/scripts/build-rereview-diff.py`로 `working/rereview-diff.json`을 만듭니다.
+- `citation-checker/scripts/build-audit-trail.py`는 flat citation 결과와 legacy grouped verification 결과를 모두 받아 canonical `verification-audit.json`으로 정규화합니다.
 
 ## 7개 검토 차원
 
@@ -92,13 +103,15 @@ AI가 만든 법률 문서, 내보내기 전에 한 번 더 잡는 최종 검토
 
 ## 산출물
 
-리뷰가 끝나면 3개 파일이 나옵니다:
+리뷰가 끝나면 대외 검토용 산출물 3개와 내부 추적용 JSON artifact가 함께 생성됩니다:
 
 | 산출물 | 설명 |
 |--------|------|
 | **레드라인 DOCX** | 원본에 추적 변경 + 여백 코멘트를 단 파일. 뭘 고쳤고 왜 고쳤는지 다 보임 |
 | **클린 DOCX** | Critical·Major 수정만 반영한 깨끗한 버전. 추적 변경·코멘트 없음 |
 | **커버 메모** | 10개 섹션짜리 검토 보고서: 릴리스 권고, 점수표, 지적사항, 반복 패턴, 스타일 분석, 다음 할 일 |
+
+추가로 `checkpoint.json`, `quality-gate-report.json`, 그리고 파싱·검증·점수화에 쓰이는 `working/*.json` artifact가 남습니다.
 
 ## 라이브러리
 
@@ -111,6 +124,15 @@ AI가 만든 법률 문서, 내보내기 전에 한 번 더 잡는 최종 검토
 
 기본 체크리스트 6종 포함: 법률의견서(한/영), 리서치 리포트, 소송서면, 계약검토 보고서, 범용.
 
+### 참조 소스 추가
+
+인용 검증용 참고 소스는 `library/inbox/`에 넣고 `/ingest`를 실행합니다.
+
+1. `library/inbox/`에 PDF, DOCX 등 참고 파일 넣기
+2. `/ingest` 또는 "inbox에 파일 넣었어" 입력
+3. 에이전트가 Markdown 변환, Grade 판별, frontmatter 생성, `library/grade-{a,b,c}/` 배치를 자동 수행
+4. 원본 파일은 `library/inbox/_processed/`로 이동
+
 ## 사용법
 
 ### 준비물
@@ -122,7 +144,7 @@ AI가 만든 법률 문서, 내보내기 전에 한 번 더 잡는 최종 검토
 ### 실행
 
 1. 이 저장소를 클론하고 Claude Code에서 열기
-2. `input/`에 DOCX 파일 넣기
+2. `input/`에 지원 포맷 파일 넣기 (`.docx`, `.pdf`, `.pptx`, `.xlsx`, `.html`, `.md`, `.txt`)
 3. `/review` 또는 "이거 검토해줘" 입력
 4. 8단계 파이프라인 돌아가고 `output/`에 결과물 생성
 5. 중간에 끊기면 마지막 체크포인트에서 이어서 진행

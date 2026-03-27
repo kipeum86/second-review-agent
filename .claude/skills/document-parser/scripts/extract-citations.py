@@ -40,9 +40,11 @@ KR_CASE_RE = re.compile(
     r'(?:선고\s*)?(\d{2,4})\s*([가-힣]{1,3})\s*(\d+)\s*(?:판결|결정|전원합의체)?'
 )
 
-# Simplified Korean case pattern: NNNN다NNNNN
+# Simplified Korean case pattern: NNNN다NNNNN, NNNN고단NNNN, NNNN구합NNNNN
+# Matches: 2024다12345, 2024고단1234, 2024구합12345
+# Rejects: 2024A12345, 24다12
 KR_CASE_SIMPLE_RE = re.compile(
-    r'(\d{2,4})\s*([다나마바가라카타파하두누구무부주후루추투푸]{1,2})\s*(\d{2,6})'
+    r'(\d{4})\s*([가-힣]{1,3})\s*(\d{2,6})'
 )
 
 # ── US Citation Patterns ──

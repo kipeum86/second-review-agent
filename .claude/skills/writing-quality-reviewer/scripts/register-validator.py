@@ -150,8 +150,37 @@ EN_INFORMAL_PATTERNS = [
 ]
 
 
-def validate_text(text: str, language: str) -> list[dict]:
-    """Run register validation on text, return findings."""
+def load_text_units(text_path: str) -> tuple[str, list[dict]]:
+    """Load either paragraph-aware units from parsed-structure.json or line-aware text."""
+    if text_path.endswith('.json'):
+        with open(text_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        paragraphs = data.get('paragraphs')
+        if isinstance(paragraphs, list) and paragraphs:
+            units = []
+            texts = []
+            for idx, para in enumerate(paragraphs):
+                para_text = str(para.get('text', ''))
+                if not para_text:
+                    continue
+                texts.append(para_text)
+                units.append({
+                    'paragraph_index': para.get('index', idx),
+                    'text': para_text,
+                })
+            return '\n'.join(texts), units
+        return data.get('full_text', ''), [
+            {'line': i + 1, 'text': line}
+            for i, line in enumerate(data.get('full_text', '').split('\n'))
+        ]
+
+    with open(text_path, 'r', encoding='utf-8') as f:
+        text = f.read()
+    return text, [{'line': i + 1, 'text': line} for i, line in enumerate(text.split('\n'))]
+
+
+def validate_text(units: list[dict], language: str) -> list[dict]:
+    """Run register validation on paragraph- or line-based text units."""
     findings = []
 
     if language == 'ko':
@@ -161,25 +190,27 @@ def validate_text(text: str, language: str) -> list[dict]:
     else:
         return findings
 
-    lines = text.split('\n')
-    for line_num, line in enumerate(lines):
+    for unit in units:
+        unit_text = unit.get('text', '')
         for pat_def in patterns:
-            for m in re.finditer(pat_def['pattern'], line, re.IGNORECASE):
+            for m in re.finditer(pat_def['pattern'], unit_text, re.IGNORECASE):
                 # Get surrounding context
                 start = max(0, m.start() - 30)
-                end = min(len(line), m.end() + 30)
-                context = line[start:end]
+                end = min(len(unit_text), m.end() + 30)
+                context = unit_text[start:end]
+
+                location = {'column': m.start(), 'text_excerpt': context.strip()}
+                if 'paragraph_index' in unit:
+                    location['paragraph_index'] = unit['paragraph_index']
+                else:
+                    location['line'] = unit.get('line', 1)
 
                 findings.append({
                     'pattern_id': pat_def['id'],
                     'severity': pat_def['severity'],
                     'description': pat_def['description'],
                     'recommendation': pat_def['recommendation'],
-                    'location': {
-                        'line': line_num + 1,
-                        'column': m.start(),
-                        'text_excerpt': context.strip(),
-                    },
+                    'location': location,
                     'matched_text': m.group(0),
                 })
 
@@ -195,16 +226,9 @@ def main():
     language = sys.argv[2]
     output_path = sys.argv[3]
 
-    # Read text — support both plain text and parsed-structure.json
-    if text_path.endswith('.json'):
-        with open(text_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            text = data.get('full_text', '')
-    else:
-        with open(text_path, 'r', encoding='utf-8') as f:
-            text = f.read()
+    text, units = load_text_units(text_path)
 
-    findings = validate_text(text, language)
+    findings = validate_text(units, language)
 
     # Summary by pattern
     by_pattern = {}

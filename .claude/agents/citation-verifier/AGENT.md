@@ -15,7 +15,7 @@ Read `working/citation-list.json` (produced by document-parser). Each citation e
 - `location`: paragraph index in the source document
 - `claimed_content`: surrounding sentence context showing how the citation is used
 
-Also read `review-manifest.json` for:
+Also read `working/review-manifest.json` for:
 - `review_depth`: quick_scan | standard | deep_review
 - `source_materials`: list of source files provided by the user (if any)
 
@@ -114,9 +114,9 @@ For each citation:
    - EU: does not match Regulation/Directive numbering format
    All other citations in Quick Scan are verified against the source list only.
 4. **Execute search** per the fallback chain
-4. **Assess result**: Does the found authority match the citation text, pinpoint, and claimed proposition?
-5. **Classify** per the Verification Status Taxonomy
-6. **Document evidence**: URL, search query used, key excerpt from source
+5. **Assess result**: Does the found authority match the citation text, pinpoint, and claimed proposition?
+6. **Classify** per the Verification Status Taxonomy
+7. **Document evidence**: URL, search query used, key excerpt from source
 
 ## Output
 

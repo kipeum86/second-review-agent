@@ -14,6 +14,8 @@ The agent persona is **10-Year Partner's Reflection** — a self-described AI Lu
 
 This project does **not** provide legal advice. It assists with quality control of AI-generated legal work product.
 
+Archived design note: [`senior-legal-review-agent-design.md`](senior-legal-review-agent-design.md) records the earlier design draft that preceded the current `CLAUDE.md` / `.claude/` implementation.
+
 ## Core Design Principles
 
 - **Anti-hallucination in review**: The reviewer itself must not hallucinate. `Nonexistent` classification requires positive evidence of non-existence; when in doubt, classify as `Unverifiable`
@@ -46,6 +48,14 @@ This project does **not** provide legal advice. It assists with quality control 
 | 8 | Self-Check | `quality-gate` | 7-item verification report |
 
 Session state is checkpointed after every step in `output/{matter_id}/checkpoint.json`. Interrupted sessions can be resumed.
+
+### Implementation Notes
+
+- WF1 Step 6 canonicalizes or assembles `issue-registry.json` and `review-scorecard.json` via `scoring-engine/scripts/assemble-review-output.py`
+- WF1 Step 7 uses `redline-generator/scripts/add-docx-comments.py` for redline/clean DOCX generation and `cover-memo-writer/scripts/generate-cover-memo.py` for the cover memo DOCX
+- WF1 Step 8 uses `quality-gate/scripts/run-quality-gate.py` to emit `quality-gate-report.json`
+- WF3 RR-2 uses `document-parser/scripts/build-rereview-diff.py` to create `working/rereview-diff.json`
+- `citation-checker/scripts/build-audit-trail.py` accepts either canonical flat citation results or legacy grouped verification output and normalizes both into the current `verification-audit.json` schema
 
 ## Seven Review Dimensions
 
@@ -112,26 +122,30 @@ Main agent (CLAUDE.md orchestrator)
   |     redline-generator, cover-memo-writer, cross-document-checker,
   |     library-manager, ingest
   |-- Sub-agent:
-  |     citation-verifier (dispatched for Standard/Deep review)
-  |-- Python scripts (13):
-  |     parse-docx-structure.py, extract-citations.py, extract-defined-terms.py,
-  |     register-validator.py, term-consistency-checker.py, style-fingerprint-compare.py,
-  |     numbering-validator.py, cross-reference-checker.py, docx-format-inspector.py,
-  |     build-audit-trail.py, ingest-sample.py, build-style-profile.py,
-  |     validate-checklist.py
+  |     citation-verifier (dispatched for Standard/Deep review, and for Quick Scan citations that fail format validation)
+  |-- Python scripts (19):
+  |     parse-docx-structure.py, parse-markdown-structure.py,
+  |     extract-citations.py, extract-defined-terms.py, build-rereview-diff.py,
+  |     build-audit-trail.py, docx-format-inspector.py,
+  |     ingest-sample.py, build-style-profile.py, validate-checklist.py,
+  |     add-docx-comments.py, numbering-validator.py, cross-reference-checker.py,
+  |     register-validator.py, style-fingerprint-compare.py, term-consistency-checker.py,
+  |     assemble-review-output.py, generate-cover-memo.py, run-quality-gate.py
   `-- Slash commands (5):
         /review, /cross-review, /rereview, /library, /ingest
 ```
 
 ## Deliverables
 
-Each review produces three files:
+Each review produces three client-facing deliverables plus runtime audit artifacts:
 
 | Deliverable | Description |
 |-------------|-------------|
 | **Redline DOCX** | Original document with tracked changes (`<w:del>/<w:ins>`) and severity-coded margin comments. Author: "10-Year Partner's Reflection" |
 | **Clean DOCX** | Original with only Critical/Major textual corrections accepted. No tracked changes or comments remain |
 | **Cover Memo** | 10-section review report: release recommendation (top), scorecard table, findings by severity, recurring patterns, style analysis, next steps |
+
+Additional runtime artifacts include `checkpoint.json`, `quality-gate-report.json`, and the working JSON files for parsing, verification, and scoring.
 
 ## Library System
 
@@ -178,7 +192,8 @@ The agent maintains a graded source library for citation verification. Drop file
 |   |   |-- review.md
 |   |   |-- cross-review.md
 |   |   |-- rereview.md
-|   |   `-- library.md
+|   |   |-- library.md
+|   |   `-- ingest.md
 |   `-- skills/
 |       |-- document-parser/           # DOCX parsing + citation/term extraction
 |       |-- citation-checker/          # verification workflow + audit trail
@@ -227,7 +242,7 @@ The agent maintains a graded source library for citation verification. Drop file
 ### Running a review
 
 1. Clone this repo and open the directory in Claude Code.
-2. Drop a DOCX file into `input/`.
+2. Drop a supported review file into `input/` (`.docx`, `.pdf`, `.pptx`, `.xlsx`, `.html`, `.md`, `.txt`).
 3. Run `/review` or simply ask: "Review this document."
 4. The agent runs the 8-step pipeline and produces deliverables in `output/`.
 5. Interrupted sessions resume automatically from the last checkpoint.

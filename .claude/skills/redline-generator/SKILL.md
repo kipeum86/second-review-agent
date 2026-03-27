@@ -1,36 +1,27 @@
 # redline-generator Skill
 
-Apply margin comments and tracked changes to DOCX for review output generation. Phase 1 (current): comment-only redline using `scripts/add-docx-comments.py`. Phase 2 (future): tracked changes with `<w:del>`/`<w:ins>`.
+Apply margin comments and tracked changes to DOCX for review output generation using `scripts/add-docx-comments.py`.
 
 ## Capabilities
 
-0. **Comment-Only Redline** (Phase 1 — `scripts/add-docx-comments.py`)
+0. **Redline DOCX Generation** (`scripts/add-docx-comments.py`)
    - Copy original DOCX (**never modify the original**)
-   - Insert margin comments for ALL findings from issue-registry.json
-   - Each comment: severity prefix + description + recommendation
-   - Paragraph mapping: paragraph_index → regex parse → text search fallback → unmapped collection
-   - Usage: `python3 add-docx-comments.py <input_docx> <issue_registry_json> <output_docx>`
+   - Insert margin comments for ALL findings from `issue-registry.json`
+   - Insert tracked changes (`<w:del>` + `<w:ins>`) for Critical/Major findings when the recommendation exposes an explicit textual correction (arrow replacement or typo list)
+   - Comment prefixes are citation-aware when `verification-audit.json` is provided
+   - Paragraph mapping: paragraph_index → regex parse → keyword search → correction-text search → unmapped collection
+   - Usage: `python3 add-docx-comments.py <input_docx> <issue_registry_json> <output_redline_docx> [--clean-output <output_clean_docx>] [--verification-audit <verification_audit_json>] [--fallback-markdown <fallback_md_path>]`
    - Output: annotated DOCX with comments attached to relevant paragraphs
    - Unmapped issues collected in a final comment at document end
    - Stdlib only (zipfile + xml.etree.ElementTree) — no python-docx dependency
 
-1. **Redline DOCX with Tracked Changes** (Phase 2 — future)
-   - Copy original DOCX (**never modify the original**)
-   - Unzip copy → parse `word/document.xml`
-   - For each finding in issue-registry.json:
-     - Locate target paragraph by text matching (fuzzy fallback)
-     - Insert tracked changes (`<w:del>` + `<w:ins>`) for Critical/Major textual corrections
-     - Add margin comments for ALL findings (severity-coded prefix)
-   - Repack as redline DOCX
-
-2. **Clean DOCX Generation**
-   - Start from the redline DOCX
+1. **Clean DOCX Generation**
+   - Start from a copy of the original DOCX
    - Accept only Critical/Major textual corrections (Suggestions remain comment-only)
-   - Remove all tracked change markup, leaving corrected text
-   - Remove all comments
+   - Apply textual replacements directly so the clean version contains no tracked change or comment markup
    - Result: clean document with only substantive fixes applied
 
-3. **Comment Formatting**
+2. **Comment Formatting**
    - All comments follow the format guide in `references/comment-format-guide.md`
    - Severity prefix: `[CRITICAL]`, `[MAJOR]`, `[MINOR]`, `[SUGGESTION]`
    - Citation comments: use Verification Status prefix (e.g., `[CRITICAL — NONEXISTENT]`)
@@ -43,16 +34,13 @@ Original DOCX (in input/)
     │
     ├── Copy to working/ (PRESERVE ORIGINAL)
     │
-    ├── Phase 1: Comment-Only Redline (CURRENT)
-    │   ├── Run add-docx-comments.py <input> <issue-registry> <output>
+    ├── Redline Generation (CURRENT)
+    │   ├── Run add-docx-comments.py <input> <issue-registry> <redline> --clean-output <clean>
     │   ├── Maps issues to paragraphs (index → regex → keyword search)
     │   ├── Inserts <w:comment> + range markers for each issue
+    │   ├── Inserts tracked changes for explicit textual corrections
     │   ├── Creates/updates comments.xml, rels, content types
     │   └── Output: {doc}_redline_v{N}.docx (with margin comments)
-    │
-    ├── Phase 2: Tracked Changes (FUTURE)
-    │   ├── Insert <w:del>/<w:ins> for textual corrections
-    │   └── Requires: run splitting, format preservation
     │
     └── Clean DOCX: accept Critical/Major corrections → {doc}_clean_v{N}.docx
 ```
@@ -110,7 +98,7 @@ Reference patterns from `contract-review-agent/.claude/skills/docx-redliner/scri
 
 1. **NEVER modify the original DOCX** — always work on a copy
 2. **Preserve original formatting** — copy `<w:rPr>` from existing runs
-3. If DOCX XML manipulation fails → attempt auto-repair
+3. If DOCX XML manipulation fails → attempt XML sanitization + retry
 4. If repair fails → produce **Markdown fallback** + error report
 5. Clean DOCX must have **no remaining tracked changes or comments**
 
