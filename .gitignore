@@ -35,6 +35,9 @@ venv/
 # Design docs
 senior-legal-review-agent-design.md
 
+# Audit prompts
+codex-audit-prompt.md
+
 # OS
 .DS_Store
 Thumbs.db
