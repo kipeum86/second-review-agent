@@ -89,6 +89,17 @@ def check_cross_references(parsed: dict) -> list[dict]:
                 'target': f'제{art}조',
             })
 
+    if len(existing_sections) > 5 and unreferenced_sections:
+        for sec in sorted(unreferenced_sections):
+            findings.append({
+                'check_type': 'unreferenced_section',
+                'severity': 'Suggestion',
+                'location': {},
+                'description': f'Unreferenced section: Section {sec} is never referenced elsewhere in the document',
+                'recommendation': 'Confirm whether this section is intentionally standalone (informational only)',
+                'target': f'Section {sec}',
+            })
+
     return findings
 
 

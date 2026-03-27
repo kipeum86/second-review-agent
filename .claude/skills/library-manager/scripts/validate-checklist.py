@@ -30,6 +30,62 @@ VALID_DIMENSION_NAMES = [
 ]
 
 
+def _parse_scalar(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):
+        return value[1:-1]
+    return value
+
+
+def load_checklist_yaml(yaml_path: str) -> dict:
+    """Load checklist YAML using PyYAML when available, with a stdlib fallback."""
+    if yaml is not None:
+        with open(yaml_path, 'r', encoding='utf-8') as f:
+            return yaml.safe_load(f)
+
+    data = {}
+    current_parent = None
+    current_list_key = None
+
+    with open(yaml_path, 'r', encoding='utf-8') as f:
+        for lineno, raw_line in enumerate(f, 1):
+            line = raw_line.rstrip('\n').rstrip('\r')
+            if not line.strip() or line.lstrip().startswith('#'):
+                continue
+
+            indent = len(line) - len(line.lstrip(' '))
+            stripped = line.lstrip(' ')
+
+            if indent == 0:
+                current_parent = None
+                current_list_key = None
+                if stripped.endswith(':'):
+                    key = stripped[:-1].strip()
+                    data[key] = {}
+                    current_parent = key
+                else:
+                    if ':' not in stripped:
+                        raise ValueError(f'Line {lineno}: expected "key: value"')
+                    key, value = stripped.split(':', 1)
+                    data[key.strip()] = _parse_scalar(value)
+            elif indent == 2 and current_parent:
+                if not stripped.endswith(':'):
+                    raise ValueError(f'Line {lineno}: expected nested "key:" under {current_parent}')
+                key = stripped[:-1].strip()
+                if not isinstance(data.get(current_parent), dict):
+                    raise ValueError(f'Line {lineno}: parent "{current_parent}" is not a mapping')
+                data[current_parent][key] = []
+                current_list_key = key
+            elif indent >= 4 and current_parent and current_list_key:
+                if not stripped.startswith('- '):
+                    raise ValueError(f'Line {lineno}: expected list item under {current_parent}.{current_list_key}')
+                data[current_parent][current_list_key].append(_parse_scalar(stripped[2:]))
+            else:
+                raise ValueError(f'Line {lineno}: unsupported indentation pattern')
+
+    return data
+
+
 def validate_checklist(data: dict) -> list[str]:
     """Validate checklist data. Returns list of error messages."""
     errors = []
@@ -50,8 +106,8 @@ def validate_checklist(data: dict) -> list[str]:
         lang = data['language']
         if not isinstance(lang, str):
             errors.append('language must be a string')
-        elif lang not in ('ko', 'en', 'ja', 'zh'):
-            errors.append(f'language "{lang}" is unusual — expected: ko, en, ja, zh')
+        elif lang not in ('ko', 'en', 'ja', 'zh', 'any'):
+            errors.append(f'language "{lang}" is unusual — expected: ko, en, ja, zh, any')
 
     if 'description' in data and not isinstance(data['description'], str):
         errors.append('description must be a string')
@@ -88,20 +144,11 @@ def main():
         print(json.dumps({'valid': False, 'errors': [f'File not found: {yaml_path}']}))
         sys.exit(1)
 
-    if yaml is None:
-        # Fallback: basic YAML parsing without PyYAML
-        print(json.dumps({
-            'valid': False,
-            'errors': ['PyYAML not installed. Run: pip3 install pyyaml']
-        }))
+    try:
+        data = load_checklist_yaml(yaml_path)
+    except Exception as e:
+        print(json.dumps({'valid': False, 'errors': [f'YAML parse error: {e}']}))
         sys.exit(1)
-
-    with open(yaml_path, 'r', encoding='utf-8') as f:
-        try:
-            data = yaml.safe_load(f)
-        except yaml.YAMLError as e:
-            print(json.dumps({'valid': False, 'errors': [f'YAML parse error: {e}']}))
-            sys.exit(1)
 
     errors = validate_checklist(data)
 

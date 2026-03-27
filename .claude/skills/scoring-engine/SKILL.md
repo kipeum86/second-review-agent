@@ -40,6 +40,8 @@ Compute per-dimension review scores, overall grade, and independent release reco
 - WF1 Step 6: Issue Consolidation & Scoring
 - Input: All findings from Steps 3–5, verification-audit.json, review-manifest.json
 - Output: `issue-registry.json`, `review-scorecard.json`
+- Script: `scripts/assemble-review-output.py`
+- Usage: `python3 assemble-review-output.py <working_dir> [--legacy-issue-registry <path>] [--legacy-scorecard <path>]`
 
 ## Grade vs. Release Interaction
 

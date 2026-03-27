@@ -61,6 +61,12 @@ Input document
    - Outputs: `defined-terms.json` (per term: text, definition_location, usage_locations)
    - Works identically on both DOCX-parsed and Markdown-parsed structure
 
+5. **Re-review Delta Mapping Helper** (`scripts/build-rereview-diff.py`)
+   - Compares original/revised `parsed-structure.json` files against prior `issue-registry.json`
+   - Maps prior findings to revised paragraph indices using fuzzy similarity
+   - Outputs `rereview-diff.json` with `mapped` / `changed` / `removed` statuses
+   - Usage: `python3 build-rereview-diff.py <original_parsed_json> <revised_parsed_json> <prior_issue_registry_json> <output_path>`
+
 ## Workflow
 
 ### Path A: DOCX (native)

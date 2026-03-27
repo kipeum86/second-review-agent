@@ -2,6 +2,9 @@
 
 Self-verification checklist for review outputs (WF1 Step 8).
 
+Primary script: `scripts/run-quality-gate.py`
+Usage: `python3 run-quality-gate.py <working_dir> <deliverables_dir> <output_path>`
+
 ## 7-Item Self-Verification Checklist
 
 Run each check against the generated outputs. All must pass for clean delivery.
@@ -10,7 +13,7 @@ Run each check against the generated outputs. All must pass for clean delivery.
 **Verify**: Redline DOCX contains tracked changes for ALL Critical and Major findings in issue-registry.json.
 - Count tracked changes in redline → count must match Critical + Major findings that have textual corrections
 - Missing tracked change for a Critical finding = self-check failure
-- If redline is comment-only (Phase 1 — no tracked changes), verify: comment count in DOCX ≥ total issue count in issue-registry.json
+- If a particular issue has no explicit textual correction, verify it is still represented by a comment in the redline DOCX
 - Each comment must have the correct severity prefix per comment-format-guide.md
 
 ### Check 2 — Review Comment Integrity

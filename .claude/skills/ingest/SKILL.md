@@ -46,9 +46,9 @@ inbox/ 내 모든 파일을 Glob으로 탐색
 
 | 입력 포맷 | 변환 방법 |
 |----------|----------|
-| `.pdf` | `mcp__markitdown__convert_to_markdown` (uri: `file:///절대경로`) |
-| `.docx` | `mcp__markitdown__convert_to_markdown` |
-| `.pptx`, `.xlsx`, `.html` | `mcp__markitdown__convert_to_markdown` |
+| `.pdf` | `mcp__markitdown-mcp__convert_to_markdown` (uri: `file:///절대경로`) |
+| `.docx` | `mcp__markitdown-mcp__convert_to_markdown` |
+| `.pptx`, `.xlsx`, `.html` | `mcp__markitdown-mcp__convert_to_markdown` |
 | `.md`, `.txt` | 변환 불필요, 그대로 사용 |
 
 **변환 실패 시:** 해당 파일을 `library/inbox/_failed/`로 이동 + 유저에게 실패 사유 안내

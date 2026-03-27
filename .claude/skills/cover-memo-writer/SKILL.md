@@ -7,6 +7,7 @@ Generate the review cover memo in senior partner voice.
 - WF1 Step 7: Output Generation
 - Input: issue-registry.json, review-scorecard.json, verification-audit.json, review-manifest.json
 - Output: `review-cover-memo_v{N}.docx`
+- Script: `scripts/generate-cover-memo.py`
 
 ## 10 Mandatory Sections
 
@@ -90,14 +91,17 @@ The cover memo MUST contain all 10 sections in this order:
 
 ## DOCX Generation Approach
 
-Use `python-docx` to create the memo:
+Use `python-docx` via `scripts/generate-cover-memo.py` to create the memo:
 1. Create new Document
 2. Add sections with appropriate heading styles
 3. Add scorecard as a Table
 4. Add findings as numbered lists
 5. Save as `review-cover-memo_v{N}.docx`
 
-If `python-docx` is not available → generate as Markdown fallback
+Usage:
+`python3 generate-cover-memo.py <review_manifest_json> <issue_registry_json> <review_scorecard_json> <verification_audit_json> <output_docx>`
+
+If `python-docx` is not available → generate as Markdown fallback next to the requested DOCX path
 
 ## Checkpoint
 
