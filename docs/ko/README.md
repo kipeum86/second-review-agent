@@ -1,16 +1,16 @@
 언어: [English](../../README.md) | **한국어**
 
-# 10년차 파트너 변호사 반성문
+# 시니어 리뷰 스페셜리스트 반성문
 
-AI가 만든 법률 문서, 내보내기 전에 한 번 더 잡는 최종 검토 에이전트. Claude Code 기반.
+AI가 만든 법률 문서를 외부 공유 전에 한 번 더 점검하는 Jinju Legal Orchestrator의 최종 검토 에이전트. Claude Code 기반.
 
 > **[면책조항](disclaimer.md)** | **[Disclaimer](../en/disclaimer.md)**
 
 ## 개요
 
-`10년차 파트너 변호사 반성문`은 법무법인 진주의 최종 검토 에이전트입니다. 고덕수 변호사([contract-review](https://github.com/kipeum86/contract-review-agent)), 한석봉 변호사([legal-writing](https://github.com/kipeum86/legal-writing-agent)), 김재식 변호사([general-legal-research](https://github.com/kipeum86/general-legal-research)), 심진주 변호사([game-legal-research](https://github.com/kipeum86/game-legal-research-agent))가 만든 문서를 받아서 인용을 검증하고, 논리를 따지고, 문장을 다듬고, 레드라인 DOCX로 결과를 냅니다. 문서가 밖으로 나가기 전 마지막 관문입니다.
+`시니어 리뷰 스페셜리스트 반성문`은 Jinju Legal Orchestrator의 최종 검토 에이전트입니다. 계약 검토 스페셜리스트 고덕수([contract-review](https://github.com/kipeum86/contract-review-agent)), 법률 드래프팅 스페셜리스트 한석봉([legal-writing](https://github.com/kipeum86/legal-writing-agent)), 법률 리서치 스페셜리스트 김재식([general-legal-research](https://github.com/kipeum86/general-legal-research)), 게임 산업법 스페셜리스트 심진주([game-legal-research](https://github.com/kipeum86/game-legal-research-agent))가 만든 문서를 받아서 인용을 검증하고, 논리를 따지고, 문장을 다듬고, 레드라인 DOCX로 결과를 냅니다. 문서가 외부 공유 단계로 넘어가기 전 마지막 관문입니다.
 
-페르소나는 **10년차 파트너 변호사 반성문** — AI가 만든 문서를 본능적으로 의심하는 자칭 AI 러다이트. 덕분에 사무소에서 가장 집요하게 검증합니다. 여백에 빨간펜, 한 줄 코멘트, 가짜 판례에는 무관용.
+페르소나는 **시니어 리뷰 스페셜리스트 반성문** — AI가 만든 문서를 본능적으로 의심하는 자칭 AI 러다이트. 덕분에 워크플로우 안에서 가장 집요하게 검증합니다. 여백에 빨간펜, 한 줄 코멘트, 가짜 판례에는 무관용.
 
 이 프로젝트는 법률 자문이 **아닙니다**. AI 산출물의 품질 관리를 돕는 도구입니다.
 
@@ -165,10 +165,10 @@ input/ 에 있는 법률의견서 검토해줘. 정밀검토로.
 
 ## 관련 프로젝트
 
-**법무법인 진주** 소속 전문 법률 AI 에이전트 시리즈:
+**Jinju Legal Orchestrator**의 전문 법률 워크플로우 에이전트 시리즈:
 
-| 에이전트 | 변호사 | 전문 분야 |
-|---------|--------|----------|
+| 에이전트 | 스페셜리스트 | 중점 분야 |
+|---------|--------------|----------|
 | [game-legal-research](https://github.com/kipeum86/game-legal-research) | 심진주 | 게임 산업법 |
 | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | 변혁기 | 법률 번역 |
 | [general-legal-research](https://github.com/kipeum86/general-legal-research) | 김재식 | 법률 리서치 |
@@ -176,7 +176,7 @@ input/ 에 있는 법률의견서 검토해줘. 정밀검토로.
 | [GDPR-expert](https://github.com/kipeum86/GDPR-expert) | 김덕배 | 데이터 보호법 (GDPR) |
 | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | 고덕수 | 계약서 검토 |
 | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | 한석봉 | 법률 문서 작성 |
-| **[second-review-agent](https://github.com/kipeum86/second-review-agent)** | **반성문** | **품질 리뷰 (파트너)** |
+| **[second-review-agent](https://github.com/kipeum86/second-review-agent)** | **반성문** | **품질 리뷰 (시니어 리뷰 스페셜리스트)** |
 
 ## 면책조항
 

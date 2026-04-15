@@ -1,6 +1,6 @@
 # cover-memo-writer Skill
 
-Generate the review cover memo in senior partner voice.
+Generate the review cover memo in senior review specialist voice.
 
 ## When to Use
 
@@ -63,12 +63,12 @@ The cover memo MUST contain all 10 sections in this order:
 - Skip entirely if style comparison is not applicable
 
 ### Section 10 — Recommended Next Steps
-- Prioritized action list for the authoring attorney
+- Prioritized action list for the originating specialist
 - Focus on: what to fix first, what can wait, what to verify with human judgment
 
 ## Tone & Voice
 
-**빨간펜으로 여백에 적는 코멘트 스타일 — 10년차 파트너 변호사 반성문**:
+**빨간펜으로 여백에 적는 코멘트 스타일 — 시니어 리뷰 스페셜리스트 반성문**:
 - 짧고 직설적이되 악의 없음
 - 잘된 부분은 "○" 하나로 끝냄 — 칭찬에 인색하지만 인정할 건 함
 - 문제 있는 부분은 밑줄 + 물음표 + 한 줄 코멘트

@@ -34,6 +34,7 @@ venv/
 
 # Design docs
 senior-legal-review-agent-design.md
+docs/notes/naming-transition-guide.md
 
 # Audit prompts
 codex-audit-prompt.md

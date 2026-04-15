@@ -4,7 +4,7 @@ Language: **English** | [한국어](../ko/disclaimer.md)
 
 ## Personal Project
 
-This is an independent, personal project by Kipeum Lee. It is not sponsored, endorsed, or affiliated with any law firm, employer, or organization. All opinions, design decisions, and content are solely my own.
+This is an independent, personal project by Kipeum Lee. It is not sponsored, endorsed, or affiliated with any legal practice, employer, or organization. All opinions, design decisions, and content are solely my own.
 
 ## Not Legal Advice
 
