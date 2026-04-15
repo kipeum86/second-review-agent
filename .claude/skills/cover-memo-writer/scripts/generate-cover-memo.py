@@ -36,7 +36,7 @@ def build_sections(manifest, issue_registry, review_scorecard, verification_audi
     issues = issue_registry.get("issues", [])
     release = review_scorecard.get("release_recommendation", "Pass with Warnings")
     grade = review_scorecard.get("overall_grade", "C")
-    reviewer = "10년차 파트너 변호사 반성문" if is_korean else "10-Year Partner's Reflection"
+    reviewer = "시니어 리뷰 스페셜리스트 반성문" if is_korean else "Senior Review Specialist Ban Seong-mun"
     today = datetime.now().strftime("%Y-%m-%d")
 
     critical = [issue for issue in issues if severity_title(issue.get("severity")) == "Critical"]
@@ -49,7 +49,7 @@ def build_sections(manifest, issue_registry, review_scorecard, verification_audi
         overall_assessment = (
             f"○ 구조와 분석 밀도는 충분합니다. 다만 인용 검증과 핵심 날짜·조문 정합성에서 "
             f"즉시 수정이 필요한 이슈가 확인되었습니다. 총 {len(issues)}건, 인용 검증 대상 {citation_count}건을 기준으로 보면 "
-            f"현재 버전은 파트너 검토 전 내부 품질 기준은 통과했더라도 외부 발송 기준에는 아직 못 미칩니다."
+            f"현재 버전은 내부 점검 기준 일부는 충족했더라도 외부 공유 기준에는 아직 못 미칩니다."
         )
         style_text = "스타일 비교 데이터가 없으면 생략 가능하나, 이번 메모에서는 별도 스타일 프로파일 입력이 없어 비교를 수행하지 않았습니다."
         next_steps_intro = "우선순위는 다음과 같습니다."

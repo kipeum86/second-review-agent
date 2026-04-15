@@ -45,8 +45,8 @@ XML_NS = NAMESPACES["xml"]
 COMMENT_REL_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"
 COMMENT_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml"
 
-AUTHOR_KO = "10년차 파트너 변호사 반성문"
-AUTHOR_EN = "10-Year Partner's Reflection"
+AUTHOR_KO = "시니어 리뷰 스페셜리스트 반성문"
+AUTHOR_EN = "Senior Review Specialist Ban Seong-mun"
 DATE = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 COMMENT_STYLE_DEFS = """\
