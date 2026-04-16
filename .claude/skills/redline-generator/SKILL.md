@@ -30,7 +30,7 @@ Apply margin comments and tracked changes to DOCX for review output generation u
 ## DOCX Processing Workflow
 
 ```
-Original DOCX (in input/)
+Original DOCX (in `$SECOND_REVIEW_PRIVATE_DIR/input/`)
     │
     ├── Copy to working/ (PRESERVE ORIGINAL)
     │
@@ -92,7 +92,7 @@ Reference patterns from `contract-review-agent/.claude/skills/docx-redliner/scri
 
 - WF1 Step 7: Redline & Output Generation
 - Input: issue-registry.json, original DOCX, verification-audit.json
-- Output: redline DOCX, clean DOCX (saved to `deliverables/`)
+- Output: redline DOCX, clean DOCX (saved to `$SECOND_REVIEW_PRIVATE_DIR/output/{matter_id}/round_{N}/deliverables/`)
 
 ## Safety Rules
 

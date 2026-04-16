@@ -6,6 +6,9 @@ Final quality gate for AI-generated legal documents in Jinju Legal Orchestrator,
 
 > **[Disclaimer](docs/en/disclaimer.md)** | **[면책조항](docs/ko/disclaimer.md)**
 
+Matter-private storage env var: `SECOND_REVIEW_PRIVATE_DIR`
+Recommended value: `export SECOND_REVIEW_PRIVATE_DIR="$HOME/Documents/second-review-private"`
+
 ## Overview
 
 Second Review Agent is a Claude Code agent scaffold within Jinju Legal Orchestrator that acts as the final review layer before any legal document leaves the workflow. It reviews documents produced by Contract Specialist Ko Duksoo ([contract-review](https://github.com/kipeum86/contract-review-agent)), Legal Drafting Specialist Han Seokbong ([legal-writing](https://github.com/kipeum86/legal-writing-agent)), Legal Research Specialist Kim Jaesik ([general-legal-research](https://github.com/kipeum86/general-legal-research)), and Game Industry Law Specialist Shim Jinju ([game-legal-research](https://github.com/kipeum86/game-legal-research-agent)) — verifying citations, checking legal logic, evaluating writing quality, and producing redlined DOCX deliverables with tracked changes.
@@ -47,7 +50,7 @@ An archived private design note records the earlier draft that preceded the curr
 | 7 | Output Generation | `redline-generator`, `cover-memo-writer` | Redline DOCX, Clean DOCX, Cover Memo |
 | 8 | Self-Check | `quality-gate` | 7-item verification report |
 
-Session state is checkpointed after every step in `output/{matter_id}/checkpoint.json`. Interrupted sessions can be resumed.
+Session state is checkpointed after every step in `$SECOND_REVIEW_PRIVATE_DIR/output/{matter_id}/checkpoint.json`. Interrupted sessions can be resumed.
 
 ### Implementation Notes
 
@@ -220,8 +223,8 @@ The agent maintains a graded source library for citation verification. Drop file
 |   |-- known-issues/                  # 4 per-agent JSON registries
 |   |-- samples/                       # gitignored; user writing samples
 |   `-- style-profiles/                # gitignored; generated profiles
-|-- input/                             # gitignored; drop documents here
-|-- output/                            # gitignored; review results
+|-- input/                             # keep only .gitkeep; actual client files live outside the repo
+|-- output/                            # keep only .gitkeep; actual review results live outside the repo
 `-- docs/
     |-- review-dimensions-reference.md
     |-- en/
@@ -231,6 +234,14 @@ The agent maintains a graded source library for citation verification. Drop file
         `-- disclaimer.md
 ```
 
+Matter-private runtime data should live under `$SECOND_REVIEW_PRIVATE_DIR/`:
+
+```text
+$SECOND_REVIEW_PRIVATE_DIR/
+|-- input/                             # review targets
+`-- output/                            # checkpoints, working files, deliverables
+```
+
 ## How to Use
 
 ### Requirements
@@ -238,28 +249,29 @@ The agent maintains a graded source library for citation verification. Drop file
 - [Claude Code](https://claude.ai/code) CLI installed and authenticated
 - Python 3 + `python-docx` for DOCX output: `pip install python-docx`
 - MCP search providers (brave-search, tavily) for citation verification — optional but recommended
+- Matter-private storage configured: `export SECOND_REVIEW_PRIVATE_DIR="$HOME/Documents/second-review-private"`
 
 ### Running a review
 
 1. Clone this repo and open the directory in Claude Code.
-2. Drop a supported review file into `input/` (`.docx`, `.pdf`, `.pptx`, `.xlsx`, `.html`, `.md`, `.txt`).
+2. Drop a supported review file into `$SECOND_REVIEW_PRIVATE_DIR/input/` (`.docx`, `.pdf`, `.pptx`, `.xlsx`, `.html`, `.md`, `.txt`).
 3. Run `/review` or simply ask: "Review this document."
-4. The agent runs the 8-step pipeline and produces deliverables in `output/`.
+4. The agent runs the 8-step pipeline and produces deliverables in `$SECOND_REVIEW_PRIVATE_DIR/output/`.
 5. Interrupted sessions resume automatically from the last checkpoint.
 
 **Example prompts:**
 
 ```text
-Review the advisory opinion in input/. Deep review.
+Review the advisory opinion in $SECOND_REVIEW_PRIVATE_DIR/input/. Deep review.
 ```
 
 ```text
-Review the advisory opinion in input/. Standard depth. The client is a game publisher
+Review the advisory opinion in $SECOND_REVIEW_PRIVATE_DIR/input/. Standard depth. The client is a game publisher
 asking about loot box regulations in Korea.
 ```
 
 ```text
-/cross-review — There are a research report and an advisory opinion in input/. Run a cross-review.
+/cross-review — There are a research report and an advisory opinion in $SECOND_REVIEW_PRIVATE_DIR/input/. Run a cross-review.
 ```
 
 ```text

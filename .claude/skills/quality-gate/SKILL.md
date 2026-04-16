@@ -71,7 +71,7 @@ Run each check against the generated outputs. All must pass for clean delivery.
 On pass:
 ```
 ✅ Self-verification complete. All 7 checks passed.
-Deliverables saved to: output/{matter_id}/round_{N}/deliverables/
+Deliverables saved to: $SECOND_REVIEW_PRIVATE_DIR/output/{matter_id}/round_{N}/deliverables/
 ```
 
 On partial pass:
@@ -80,7 +80,7 @@ On partial pass:
 Passed: 5/7 checks
 Failed: Check 2 (comment integrity), Check 6 (clean DOCX)
 [Self-Check Warning] details attached.
-Deliverables saved to: output/{matter_id}/round_{N}/deliverables/
+Deliverables saved to: $SECOND_REVIEW_PRIVATE_DIR/output/{matter_id}/round_{N}/deliverables/
 ```
 
 ## Checkpoint

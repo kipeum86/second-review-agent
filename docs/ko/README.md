@@ -6,6 +6,9 @@ AI가 만든 법률 문서를 외부 공유 전에 한 번 더 점검하는 Jinj
 
 > **[면책조항](disclaimer.md)** | **[Disclaimer](../en/disclaimer.md)**
 
+Matter-private storage env var: `SECOND_REVIEW_PRIVATE_DIR`
+권장값: `export SECOND_REVIEW_PRIVATE_DIR="$HOME/Documents/second-review-private"`
+
 ## 개요
 
 `시니어 리뷰 스페셜리스트 반성문`은 Jinju Legal Orchestrator의 최종 검토 에이전트입니다. 계약 검토 스페셜리스트 고덕수([contract-review](https://github.com/kipeum86/contract-review-agent)), 법률 드래프팅 스페셜리스트 한석봉([legal-writing](https://github.com/kipeum86/legal-writing-agent)), 법률 리서치 스페셜리스트 김재식([general-legal-research](https://github.com/kipeum86/general-legal-research)), 게임 산업법 스페셜리스트 심진주([game-legal-research](https://github.com/kipeum86/game-legal-research-agent))가 만든 문서를 받아서 인용을 검증하고, 논리를 따지고, 문장을 다듬고, 레드라인 DOCX로 결과를 냅니다. 문서가 외부 공유 단계로 넘어가기 전 마지막 관문입니다.
@@ -47,7 +50,7 @@ AI가 만든 법률 문서를 외부 공유 전에 한 번 더 점검하는 Jinj
 | 7 | 결과물 생성 | `redline-generator`, `cover-memo-writer` | 레드라인 DOCX, 클린 DOCX, 커버 메모 |
 | 8 | 자체 검증 | `quality-gate` | 7항목 검증 보고서 |
 
-단계마다 `output/{matter_id}/checkpoint.json`에 진행 상태를 저장합니다. 중간에 끊겨도 이어서 할 수 있습니다.
+단계마다 `$SECOND_REVIEW_PRIVATE_DIR/output/{matter_id}/checkpoint.json`에 진행 상태를 저장합니다. 중간에 끊겨도 이어서 할 수 있습니다.
 
 ### 구현 메모
 
@@ -144,19 +147,19 @@ AI가 만든 법률 문서를 외부 공유 전에 한 번 더 점검하는 Jinj
 ### 실행
 
 1. 이 저장소를 클론하고 Claude Code에서 열기
-2. `input/`에 지원 포맷 파일 넣기 (`.docx`, `.pdf`, `.pptx`, `.xlsx`, `.html`, `.md`, `.txt`)
+2. `$SECOND_REVIEW_PRIVATE_DIR/input/`에 지원 포맷 파일 넣기 (`.docx`, `.pdf`, `.pptx`, `.xlsx`, `.html`, `.md`, `.txt`)
 3. `/review` 또는 "이거 검토해줘" 입력
-4. 8단계 파이프라인 돌아가고 `output/`에 결과물 생성
+4. 8단계 파이프라인 돌아가고 `$SECOND_REVIEW_PRIVATE_DIR/output/`에 결과물 생성
 5. 중간에 끊기면 마지막 체크포인트에서 이어서 진행
 
 **예시:**
 
 ```text
-input/ 에 있는 법률의견서 검토해줘. 정밀검토로.
+$SECOND_REVIEW_PRIVATE_DIR/input/ 에 있는 법률의견서 검토해줘. 정밀검토로.
 ```
 
 ```text
-/cross-review — input/ 에 리서치 리포트랑 법률의견서 두 개 있어. 교차검토 해줘.
+/cross-review — $SECOND_REVIEW_PRIVATE_DIR/input/ 에 리서치 리포트랑 법률의견서 두 개 있어. 교차검토 해줘.
 ```
 
 ```text

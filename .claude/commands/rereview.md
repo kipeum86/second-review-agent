@@ -4,7 +4,7 @@ Execute WF3 — Re-review Pipeline (4 steps):
 
 1. Identify the revised document and the prior review round:
    - $ARGUMENTS should specify matter_id or prior round reference
-   - If not specified, check `output/` for the most recent review of the same document
+   - If not specified, check `$SECOND_REVIEW_PRIVATE_DIR/output/` for the most recent review of the same document
 2. Execute Steps RR-1 through RR-4:
    - RR-1: Load Prior Review State (read issue-registry.json and verification-audit.json from prior round)
    - RR-2: Delta Identification:
@@ -25,5 +25,5 @@ Execute WF3 — Re-review Pipeline (4 steps):
      - Status per prior finding
      - New findings from revised content
      - Updated scorecard
-3. Save to `output/{matter_id}/round_{N+1}/`
+3. Save to `$SECOND_REVIEW_PRIVATE_DIR/output/{matter_id}/round_{N+1}/`
 4. Present delta summary showing what was fixed and what remains
