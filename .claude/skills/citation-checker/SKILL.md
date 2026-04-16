@@ -161,3 +161,16 @@ After the citation-verifier sub-agent returns `verification-audit.json`, the mai
 - `step_3.status` → `"completed"`
 - `step_3.output` → `"working/verification-audit.json"`
 - `last_completed_step` → `3`
+
+## Manual verification CLI (post-fetch sanitizer)
+
+For ad-hoc inspection of a single fetched excerpt:
+
+```bash
+python3 .claude/skills/_shared/scripts/sanitize_fetch.py \
+  --url "https://law.go.kr/법령/민법" \
+  --excerpt "<raw excerpt>" \
+  --audit /tmp/fetch-audit.json
+```
+
+The audit JSON reports `match_count` and `low_trust`. Non-allowlisted domains are flagged, not rejected, so the reviewer can downgrade evidentiary weight without losing the record.

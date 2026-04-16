@@ -161,7 +161,9 @@ Write `working/verification-audit.json` with this structure:
       "evidence": {
         "url": "https://law.go.kr/...",
         "search_query": "...",
-        "excerpt": "..."
+        "excerpt": "...",
+        "sanitize_audit": [],
+        "low_trust": false
       },
       "confidence": "high",
       "notes": ""
@@ -179,6 +181,8 @@ Write `working/verification-audit.json` with this structure:
 - Output MUST use a flat `citations` array. Do NOT nest citations by category (e.g., `primary_legislation`, `case_law`). Use the `citation_type` field to distinguish statute/case/regulation/treaty.
 - Every citation MUST include `authority_tier` (integer 1–4) and `authority_label`. See citation-checker SKILL.md Source Authority Classification for tier definitions.
 - `supports_conclusion` and `conclusion_location` are required when the citation supports a legal conclusion (vs. background/context).
+- Every `evidence` object MUST be passed through `sanitize_fetch.sanitize_evidence()` before it is written into `working/verification-audit.json`. `build-audit-trail.py` performs this automatically; manual JSON assembly must preserve the same invariant.
+- Every `evidence` object MUST include `sanitize_audit` (empty list if no match) and `low_trust` (true for missing or non-allowlisted domains).
 
 ## Skills Used
 
