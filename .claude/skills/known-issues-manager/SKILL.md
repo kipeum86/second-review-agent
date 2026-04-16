@@ -25,7 +25,7 @@ Match review findings against known recurring patterns and manage the known-issu
      1. Load current review's `issue-registry.json`
      2. Group findings by `(dimension, defect_type)` — if `defect_type` absent, use description keyword extraction
      3. For each group with ≥2 findings in current review:
-        a. Scan all prior review outputs: `output/*/round_*/working/issue-registry.json`
+        a. Scan all prior review outputs: `$SECOND_REVIEW_PRIVATE_DIR/output/*/round_*/working/issue-registry.json`
         b. Count distinct `matter_id`s where similar findings appeared
         c. Two findings are "similar" if they share the same dimension AND (`defect_type` matches OR description keyword overlap > 50%)
      4. If total distinct matters ≥ 3 → propose new pattern to user
