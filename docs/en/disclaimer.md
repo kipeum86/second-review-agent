@@ -37,7 +37,7 @@ If you use this tool for matters involving confidential or privileged informatio
 
 ## No Warranty
 
-This software is provided "as is", without warranty of any kind, express or implied. See the [MIT License](../../LICENSE) for full terms. The author assumes no liability for any damages arising from the use of this software or its outputs.
+This software is provided "as is", without warranty of any kind, express or implied. See the [Apache License 2.0](../../LICENSE) for full terms. The author assumes no liability for any damages arising from the use of this software or its outputs.
 
 ## Scope of Responsibility
 
