@@ -57,6 +57,20 @@ inbox/ 내 모든 파일을 Glob으로 탐색
 
 **변환 실패 시:** 해당 파일을 `library/inbox/_failed/`로 이동 + 유저에게 실패 사유 안내
 
+### Step 2.5: Injection sanitization
+
+Markdown 변환 직후 공용 sanitizer를 실행한다.
+
+```bash
+python3 .claude/skills/_shared/scripts/sanitize_injection.py \
+  --input "<converted.md>" \
+  --output "<converted.md>" \
+  --audit "<converted>.sanitize-audit.json" \
+  --source "library/inbox/<original_filename>"
+```
+
+매칭된 패턴은 `<escape>...</escape>`로 감싸고 감사 sidecar에 기록한다. `match_count > 0`이면 최종 ingest 리포트에 `Sanitized {N} injection patterns in {file}` 한 줄을 남기고, 5건을 넘으면 수동 검토 플래그를 추가한다.
+
 ### Step 3: Grade 자동 판별
 
 변환된 Markdown 내용을 분석하여 Grade를 판별한다.
