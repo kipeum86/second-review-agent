@@ -307,4 +307,4 @@ This project supports legal document quality control workflows. It does not prov
 
 ## License
 
-MIT. See `LICENSE`.
+Apache License 2.0. See `LICENSE`.
