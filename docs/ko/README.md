@@ -14,7 +14,7 @@ AI가 만든 법률 문서를 외부 공유 전에 한 번 더 점검하는 Jinj
 
 이 프로젝트는 법률 자문이 **아닙니다**. AI 산출물의 품질 관리를 돕는 도구입니다.
 
-초기 설계 메모는 [senior-legal-review-agent-design.md](../../senior-legal-review-agent-design.md)에 보관되어 있고, 현재 동작 기준은 `CLAUDE.md`와 `.claude/` 정의가 우선합니다.
+초기 설계 메모는 비공개 보관본으로 남아 있고, 현재 동작 기준은 `CLAUDE.md`와 `.claude/` 정의가 우선합니다.
 
 ## 설계 원칙
 

@@ -32,12 +32,9 @@ venv/
 .env
 .env.local
 
-# Design docs
-senior-legal-review-agent-design.md
-docs/notes/naming-transition-guide.md
-
-# Audit prompts
-codex-audit-prompt.md
+# Agent-readable private scratch (see docs/plans/security-hardening-codex.md Task 1)
+_private/*
+!_private/.gitkeep
 
 # OS
 .DS_Store

@@ -14,7 +14,7 @@ The agent persona is **Senior Review Specialist Ban Seong-mun** — a self-descr
 
 This project does **not** provide legal advice. It assists with quality control of AI-generated legal work product.
 
-Archived design note: [`senior-legal-review-agent-design.md`](senior-legal-review-agent-design.md) records the earlier design draft that preceded the current `CLAUDE.md` / `.claude/` implementation.
+An archived private design note records the earlier draft that preceded the current `CLAUDE.md` / `.claude/` implementation.
 
 ## Core Design Principles
 
