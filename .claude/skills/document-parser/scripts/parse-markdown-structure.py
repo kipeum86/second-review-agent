@@ -16,6 +16,14 @@ import os
 import json
 import re
 
+_SHARED_SCRIPTS = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "_shared", "scripts")
+)
+if _SHARED_SCRIPTS not in sys.path:
+    sys.path.insert(0, _SHARED_SCRIPTS)
+
+from sanitize_injection import sanitize as sanitize_text  # noqa: E402
+
 # ── Heading detection ──────────────────────────────────────────────────────────
 
 ATX_HEADING_RE = re.compile(r'^(#{1,6})\s+(.+?)(?:\s+#+)?\s*$')
@@ -268,6 +276,23 @@ def parse_markdown(md_path: str, output_dir: str, source_file: str | None = None
         lines = f.readlines()
 
     paragraphs = parse_markdown_lines(lines)
+    sanitize_matches = []
+    source_label = os.path.abspath(source_file or md_path)
+    for paragraph in paragraphs:
+        text = paragraph.get('text')
+        if not text:
+            continue
+        sanitized = sanitize_text(text, source=source_label)
+        paragraph['text'] = sanitized.sanitized_text
+        for match in sanitized.matches:
+            sanitize_matches.append({
+                'paragraph_index': paragraph['index'],
+                'pattern_id': match.pattern_id,
+                'start': match.start,
+                'end': match.end,
+                'snippet': match.snippet,
+            })
+
     sections = build_sections(paragraphs)
     cross_references = extract_cross_references(paragraphs)
     numbering_sequences = build_numbering_sequences(paragraphs)
@@ -290,11 +315,19 @@ def parse_markdown(md_path: str, output_dir: str, source_file: str | None = None
 
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, 'parsed-structure.json')
+    audit_path = os.path.join(output_dir, 'sanitize-audit.json')
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(structure, f, indent=2, ensure_ascii=False)
+    with open(audit_path, 'w', encoding='utf-8') as f:
+        json.dump({
+            'source': source_label,
+            'match_count': len(sanitize_matches),
+            'matches': sanitize_matches,
+        }, f, indent=2, ensure_ascii=False)
 
     result['success'] = True
     result['output_path'] = output_path
+    result['sanitize_audit_path'] = audit_path
     result['paragraph_count'] = len(paragraphs)
     result['section_count'] = len(sections)
     result['cross_reference_count'] = len(cross_references)
