@@ -19,6 +19,14 @@ import os
 import sys
 from datetime import datetime, timezone
 
+_SHARED_SCRIPTS = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "_shared", "scripts")
+)
+if _SHARED_SCRIPTS not in sys.path:
+    sys.path.insert(0, _SHARED_SCRIPTS)
+
+from sanitize_fetch import sanitize_evidence  # noqa: E402
+
 VALID_STATUSES = {
     "Verified",
     "Nonexistent",
@@ -250,6 +258,13 @@ def compute_summary(citations: list[dict]) -> dict:
 
 
 def build_audit_trail(citations: list[dict], review_depth: str = "standard") -> dict:
+    for citation in citations:
+        evidence = citation.get("evidence")
+        if isinstance(evidence, dict):
+            sanitized, audit = sanitize_evidence(evidence)
+            sanitized["sanitize_audit"] = audit
+            citation["evidence"] = sanitized
+
     all_errors = []
     for idx, citation in enumerate(citations):
         citation.setdefault("citation_id", f"CIT-{idx + 1:03d}")
