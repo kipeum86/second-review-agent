@@ -63,8 +63,8 @@ These override the general severity prefix for citation-related findings:
 
 | Document Language | Author Name |
 |------------------|-------------|
-| Korean | 시니어 리뷰 스페셜리스트 반성문 |
-| English | Senior Review Specialist Ban Seong-mun |
+| Korean | 시니어 리뷰 스페셜리스트 |
+| English | Senior Review Specialist |
 
 ## Recurring Pattern Tag
 

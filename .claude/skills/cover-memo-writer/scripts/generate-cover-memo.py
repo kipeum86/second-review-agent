@@ -36,7 +36,7 @@ def build_sections(manifest, issue_registry, review_scorecard, verification_audi
     issues = issue_registry.get("issues", [])
     release = review_scorecard.get("release_recommendation", "Pass with Warnings")
     grade = review_scorecard.get("overall_grade", "C")
-    reviewer = "시니어 리뷰 스페셜리스트 반성문" if is_korean else "Senior Review Specialist Ban Seong-mun"
+    reviewer = "시니어 리뷰 스페셜리스트" if is_korean else "Senior Review Specialist"
     today = datetime.now().strftime("%Y-%m-%d")
 
     critical = [issue for issue in issues if severity_title(issue.get("severity")) == "Critical"]

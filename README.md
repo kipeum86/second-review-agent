@@ -2,7 +2,7 @@ Language: **English** | [한국어](docs/ko/README.md)
 
 # Second Review Agent
 
-Final quality gate for AI-generated legal documents in Jinju Legal Orchestrator, powered by Claude Code.
+Final quality gate for AI-generated legal documents in KP Legal Orchestrator, powered by Claude Code.
 
 > **[Disclaimer](docs/en/disclaimer.md)** | **[면책조항](docs/ko/disclaimer.md)**
 
@@ -11,9 +11,9 @@ Recommended value: `export SECOND_REVIEW_PRIVATE_DIR="$HOME/Documents/second-rev
 
 ## Overview
 
-Second Review Agent is a Claude Code agent scaffold within Jinju Legal Orchestrator that acts as the final review layer before any legal document leaves the workflow. It reviews documents produced by Contract Specialist Ko Duksoo ([contract-review](https://github.com/kipeum86/contract-review-agent)), Legal Drafting Specialist Han Seokbong ([legal-writing](https://github.com/kipeum86/legal-writing-agent)), Legal Research Specialist Kim Jaesik ([general-legal-research](https://github.com/kipeum86/general-legal-research)), and Game Industry Law Specialist Shim Jinju ([game-legal-research](https://github.com/kipeum86/game-legal-research-agent)) — verifying citations, checking legal logic, evaluating writing quality, and producing redlined DOCX deliverables with tracked changes.
+Second Review Agent is a Claude Code agent scaffold within KP Legal Orchestrator that acts as the final review layer before any legal document leaves the workflow. It reviews documents produced by the Contract Review Specialist (`contract-review`), Legal Drafting Specialist (`legal-writing`), Legal Research Specialist (`general-legal-research`), and Game Industry Law Specialist (`game-legal-research`) — verifying citations, checking legal logic, evaluating writing quality, and producing redlined DOCX deliverables with tracked changes.
 
-The agent persona is **Senior Review Specialist Ban Seong-mun** — a self-described AI Luddite who fundamentally distrusts machine-generated legal documents. This makes him the most relentless verifier in the workflow. His review style: red pen in the margin, one-line comments, zero tolerance for hallucinated citations.
+The agent persona is **Senior Review Specialist** — a deliberately skeptical reviewer who fundamentally distrusts machine-generated legal documents. This makes the agent the most relentless verifier in the workflow. The review style is red pen in the margin, one-line comments, and zero tolerance for hallucinated citations.
 
 This project does **not** provide legal advice. It assists with quality control of AI-generated legal work product.
 
@@ -144,7 +144,7 @@ Each review produces three client-facing deliverables plus runtime audit artifac
 
 | Deliverable | Description |
 |-------------|-------------|
-| **Redline DOCX** | Original document with tracked changes (`<w:del>/<w:ins>`) and severity-coded margin comments. Author: "Senior Review Specialist Ban Seong-mun" |
+| **Redline DOCX** | Original document with tracked changes (`<w:del>/<w:ins>`) and severity-coded margin comments. Author: "Senior Review Specialist" |
 | **Clean DOCX** | Original with only Critical/Major textual corrections accepted. No tracked changes or comments remain |
 | **Cover Memo** | 10-section review report: release recommendation (top), scorecard table, findings by severity, recurring patterns, style analysis, next steps |
 
@@ -286,20 +286,20 @@ asking about loot box regulations in Korea.
 | (nothing specific) | Standard (default) |
 | "deep review", "court filing" | Deep Review |
 
-## Part of Jinju Legal Orchestrator
+## Part of KP Legal Orchestrator
 
-This agent is part of the **Jinju Legal Orchestrator** series of specialized legal workflow agents:
+This agent is part of the **KP Legal Orchestrator** series of specialized legal workflow agents:
 
-| Agent | Specialist | Focus |
-|-------|------------|-------|
-| [game-legal-research](https://github.com/kipeum86/game-legal-research) | 심진주 (Sim Jinju) | Game industry law |
-| [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | 변혁기 (Byeon Hyeok-gi) | Legal translation |
-| [general-legal-research](https://github.com/kipeum86/general-legal-research) | 김재식 (Kim Jaesik) | Legal research |
-| [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | 정보호 (Jeong Bo-ho) | Data privacy law |
-| [GDPR-expert](https://github.com/kipeum86/GDPR-expert) | 김덕배 (Kim De Bruyne) | Data protection law (GDPR) |
-| [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | 고덕수 (Ko Duksoo) | Contract review |
-| [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | 한석봉 (Han Seokbong) | Legal writing |
-| **[second-review-agent](https://github.com/kipeum86/second-review-agent)** | **반성문 (Ban Seong-mun)** | **Quality review (Senior review specialist)** |
+| Agent | Role | Focus |
+|-------|------|-------|
+| `game-legal-research` | Game Industry Law Specialist | Game industry law |
+| `legal-translation-agent` | Legal Translation Specialist | Legal translation |
+| `general-legal-research` | Legal Research Specialist | Legal research |
+| `PIPA-expert` | PIPA Specialist | Data privacy law |
+| `GDPR-expert` | GDPR Specialist | Data protection law (GDPR) |
+| `contract-review-agent` | Contract Review Specialist | Contract review |
+| `legal-writing-agent` | Legal Drafting Specialist | Legal writing |
+| **`second-review-agent`** | **Senior Review Specialist** | **Quality review** |
 
 ## Disclaimer
 
