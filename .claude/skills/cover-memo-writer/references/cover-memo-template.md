@@ -9,7 +9,7 @@
 **검토 대상**: {document_title}
 **작성자**: {author}
 **검토일**: {review_date}
-**검토자**: 시니어 리뷰 스페셜리스트 반성문
+**검토자**: 시니어 리뷰 스페셜리스트
 
 ---
 
@@ -80,7 +80,7 @@
 **Document**: {document_title}
 **Author**: {author}
 **Review Date**: {review_date}
-**Reviewer**: Senior Review Specialist Ban Seong-mun
+**Reviewer**: Senior Review Specialist
 
 ---
 
@@ -106,7 +106,7 @@ If Dimension 3 is skipped, display "N/A (skipped — no client context provided)
 
 ---
 
-## Tone Examples (시니어 리뷰 스페셜리스트 반성문 빨간펜 스타일)
+## Tone Examples (시니어 리뷰 스페셜리스트 빨간펜 스타일)
 
 ### Acknowledging Good Work
 - KR: "○ 쟁점 정리 깔끔함."
