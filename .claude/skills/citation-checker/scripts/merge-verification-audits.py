@@ -24,6 +24,7 @@ import argparse
 import json
 import os
 import sys
+import time
 from copy import deepcopy
 from datetime import datetime, timezone
 
@@ -241,6 +242,7 @@ def conflict_type(base_status: str | None, auditor_status: str | None) -> str:
 
 
 def merge(base_payload: object, auditor_payload: object, mode: str) -> tuple[dict, dict]:
+    started = time.perf_counter()
     if mode not in VALID_MODES:
         raise ValueError(f"Invalid mode: {mode}")
 
@@ -325,24 +327,38 @@ def merge(base_payload: object, auditor_payload: object, mode: str) -> tuple[dic
             }
         )
 
-    output["summary"] = compute_summary(output["citations"])
-    output["total_citations"] = len(output["citations"])
-    output["generated_at"] = datetime.now(timezone.utc).isoformat()
-    output["citation_auditor_merge"] = {
+    generated_at = datetime.now(timezone.utc).isoformat()
+    run_metrics = {
+        "elapsed_seconds": round(time.perf_counter() - started, 6),
         "mode": mode,
-        "generated_at": output["generated_at"],
-        "decisions": decisions,
+        "base_citations": len(base_by_id),
+        "auditor_citations": len(auditor_by_id),
+        "diff_rows": len(diff_rows),
+        "status_changed": decisions["status_changed"],
+        "supplemented": decisions["supplemented"],
+        "unmatched_auditor": decisions["unmatched_auditor"],
     }
-    if any(citation.get("authority_tier") is not None for citation in output["citations"]):
-        output["source_authority_summary"] = compute_source_authority_summary(output["citations"])
+    if mode not in {"shadow", "diff"}:
+        output["summary"] = compute_summary(output["citations"])
+        output["total_citations"] = len(output["citations"])
+        output["generated_at"] = generated_at
+        output["citation_auditor_merge"] = {
+            "mode": mode,
+            "generated_at": generated_at,
+            "decisions": decisions,
+            "run_metrics": run_metrics,
+        }
+        if any(citation.get("authority_tier") is not None for citation in output["citations"]):
+            output["source_authority_summary"] = compute_source_authority_summary(output["citations"])
 
     diff = {
         "mode": mode,
-        "generated_at": output["generated_at"],
+        "generated_at": generated_at,
         "total_base_citations": len(base_by_id),
         "total_auditor_citations": len(auditor_by_id),
         "decisions": decisions,
         "by_conflict_type": count_by(diff_rows, "conflict_type"),
+        "run_metrics": run_metrics,
         "rows": diff_rows,
     }
     return output, diff
