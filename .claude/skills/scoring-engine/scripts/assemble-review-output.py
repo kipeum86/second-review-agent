@@ -429,11 +429,11 @@ def main():
     working_dir = args.working_dir
     manifest = load_manifest(working_dir)
 
-    legacy_issue_registry = args.legacy_issue_registry or os.path.join(working_dir, "issue-registry.json")
-    legacy_scorecard_path = args.legacy_scorecard or os.path.join(working_dir, "review-scorecard.json")
+    legacy_issue_registry = args.legacy_issue_registry
+    legacy_scorecard_path = args.legacy_scorecard
 
     issues = []
-    legacy_registry_exists = os.path.exists(legacy_issue_registry)
+    legacy_registry_exists = bool(legacy_issue_registry and os.path.exists(legacy_issue_registry))
     if legacy_registry_exists:
         issues, meta = normalize_issue_registry(legacy_issue_registry)
         manifest.setdefault("matter_id", meta.get("matter_id"))
@@ -442,15 +442,12 @@ def main():
         issues = collect_dim_findings(working_dir)
         issues.extend(collect_d1_from_audit(working_dir, len(issues) + 1))
 
-    if not legacy_registry_exists:
-        dim_findings = collect_dim_findings(working_dir)
-        issues.extend(dim_findings)
     issues = dedupe_issues(issues)
 
     for idx, issue in enumerate(issues, 1):
         issue["issue_id"] = f"ISS-{idx:03d}"
 
-    legacy_scorecard = load_json(legacy_scorecard_path) if os.path.exists(legacy_scorecard_path) else None
+    legacy_scorecard = load_json(legacy_scorecard_path) if legacy_scorecard_path and os.path.exists(legacy_scorecard_path) else None
     issue_registry = build_issue_registry(issues, manifest)
     review_scorecard = build_scorecard(issues, manifest, legacy_scorecard=legacy_scorecard)
     if legacy_scorecard and legacy_scorecard.get("known_issues_matched"):
