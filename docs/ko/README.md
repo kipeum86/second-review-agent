@@ -36,6 +36,7 @@ Matter-private storage env var: `SECOND_REVIEW_PRIVATE_DIR`
 | `/rereview` | WF3 — 재검토 | 수정본이 이전 지적사항을 제대로 반영했는지 확인 |
 | `/library` | WF4 — 라이브러리 관리 | 샘플, 체크리스트, 반복 이슈, 스타일 프로필 관리 |
 | `/ingest` | WF5 — 소스 인제스트 | 참고 소스를 graded library로 변환·분류·배치 |
+| `/audit` | 독립 인용 감사 | Markdown 파일의 인용을 검사하고 주석 달린 감사 결과 생성 |
 
 ### WF1: 단일 문서 검토 (8단계)
 
@@ -59,6 +60,8 @@ Matter-private storage env var: `SECOND_REVIEW_PRIVATE_DIR`
 - WF1 Step 8은 `quality-gate/scripts/run-quality-gate.py`로 `quality-gate-report.json`을 생성합니다.
 - WF3 RR-2는 `document-parser/scripts/build-rereview-diff.py`로 `working/rereview-diff.json`을 만듭니다.
 - `citation-checker/scripts/build-audit-trail.py`는 flat citation 결과와 legacy grouped verification 결과를 모두 받아 canonical `verification-audit.json`으로 정규화합니다.
+- Deep Review에서는 새 citation auditor를 안전한 shadow mode로 함께 돌릴 수 있습니다. 이 결과는 기존 인용 검증과 비교용으로만 남고, 사람이 검토한 rollout 기준을 통과하기 전에는 최종 `verification-audit.json`을 바꾸지 않습니다.
+- 법률 의견서, 법률 검토 메모, 커버 메모는 공개용 [법률 메모 작성·서식 가이드](../../legal-writing-formatting-guide.md)를 기본 기준으로 참조합니다.
 
 ## 7개 검토 차원
 
@@ -89,6 +92,16 @@ Matter-private storage env var: `SECOND_REVIEW_PRIVATE_DIR`
 
 **핵심 규칙**: "없다"고 단정(`Nonexistent`)하려면 **정말 없다는 증거**가 있어야 합니다. 애매하면 `Unverifiable_No_Evidence`로 둡니다.
 
+## 인용 감사 기능 도입 방식
+
+이 저장소에는 Markdown 문서용 독립 `/audit` 명령과, WF1 Step 3에서 쓰는 더 안전한 native 인용 감사 경로가 함께 들어 있습니다.
+
+- `/audit <file.md>`는 Markdown 초안이나 리서치 노트의 인용을 사후 점검할 때 씁니다.
+- `/review`의 정식 인용 검증 결과는 계속 `working/verification-audit.json`입니다.
+- Deep Review에서는 새 인용 감사 결과를 기존 검증 결과와 비교하는 shadow mode로 먼저 돌릴 수 있습니다.
+- 더 강한 모드는 사람이 검토한 shadow diff 검토표와 readiness report가 있어야만 켜집니다.
+- 준비 근거가 없거나 불완전하면 자동으로 더 안전한 shadow-only 동작으로 돌아갑니다.
+
 ## 점수와 릴리스 판단
 
 **차원별 점수**: 1~10점 (10 = 문제 없음, 1~3 = 치명적 이슈 있음)
@@ -114,7 +127,7 @@ Matter-private storage env var: `SECOND_REVIEW_PRIVATE_DIR`
 | **클린 DOCX** | Critical·Major 수정만 반영한 깨끗한 버전. 추적 변경·코멘트 없음 |
 | **커버 메모** | 10개 섹션짜리 검토 보고서: 릴리스 권고, 점수표, 지적사항, 반복 패턴, 스타일 분석, 다음 할 일 |
 
-추가로 `checkpoint.json`, `quality-gate-report.json`, 그리고 파싱·검증·점수화에 쓰이는 `working/*.json` artifact가 남습니다.
+추가로 `checkpoint.json`, `quality-gate-report.json`, 그리고 파싱·검증·점수화·인용 감사 비교에 쓰이는 `working/*.json` artifact가 남습니다.
 
 ## 라이브러리
 
@@ -151,6 +164,14 @@ Matter-private storage env var: `SECOND_REVIEW_PRIVATE_DIR`
 3. `/review` 또는 "이거 검토해줘" 입력
 4. 8단계 파이프라인 돌아가고 `$SECOND_REVIEW_PRIVATE_DIR/output/`에 결과물 생성
 5. 중간에 끊기면 마지막 체크포인트에서 이어서 진행
+
+### Markdown 인용 감사만 실행
+
+```text
+/audit $SECOND_REVIEW_PRIVATE_DIR/input/research-note.md
+```
+
+`/audit`은 Markdown 파일용입니다. DOCX 문서 검토는 계속 `/review`를 사용해야 하며, 이 경우 DOCX 파싱과 레드라인 산출 흐름이 그대로 유지됩니다.
 
 **예시:**
 
