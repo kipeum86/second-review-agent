@@ -36,6 +36,9 @@ venv/
 _private/*
 !_private/.gitkeep
 
+# citation-auditor test fixtures — confidential opinion files used for audit testing
+test-opinion-confidential.md
+
 # OS
 .DS_Store
 Thumbs.db

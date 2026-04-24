@@ -1,0 +1,9 @@
+# Core — DOCX output generation (cover memo, redline via python-docx)
+# See CLAUDE.md §Format Matching Rule.
+python-docx>=1.1.0
+
+# citation-auditor — standalone /audit command (Phase 1, added 2026-04-24)
+# Used by citation_auditor/ Python package for markdown chunking/rendering
+# and per-jurisdiction verifier output validation.
+marko>=2.0
+pydantic>=2.0
