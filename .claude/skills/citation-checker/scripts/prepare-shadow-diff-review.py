@@ -124,6 +124,7 @@ def build_review(diff: dict[str, Any], manifest: dict[str, Any], reviewer: str |
         },
         "rollout_gate_observations": {
             "human_reviewed": False,
+            "kr_statute_or_case_matter": None,
             "false_positive_nonexistent_count": None,
             "false_positive_critical_count": None,
             "useful_supplemental_evidence_count": None,
