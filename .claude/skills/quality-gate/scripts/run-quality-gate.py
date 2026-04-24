@@ -21,7 +21,7 @@ _SHARED_SCRIPTS = os.path.abspath(
 if _SHARED_SCRIPTS not in sys.path:
     sys.path.insert(0, _SHARED_SCRIPTS)
 
-from artifact_meta import write_artifact_meta  # noqa: E402
+from artifact_meta import validate_artifacts, write_artifact_meta  # noqa: E402
 
 VALID_RELEASES = {
     "Pass",
@@ -45,6 +45,25 @@ def load_json_optional(path):
 def write_json(path, payload):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
+
+
+def fail_artifact_validation(errors):
+    print(
+        json.dumps(
+            {
+                "error": "Artifact validation failed",
+                "validation_errors": errors,
+            },
+            ensure_ascii=False,
+        )
+    )
+    sys.exit(1)
+
+
+def validate_input_artifacts(entries):
+    errors = validate_artifacts(entries, require_meta=False)
+    if errors:
+        fail_artifact_validation(errors)
 
 
 def find_first(pattern):
@@ -156,13 +175,27 @@ def main():
     parser.add_argument("output_path")
     args = parser.parse_args()
 
-    issue_registry = load_json(os.path.join(args.working_dir, "issue-registry.json"))
-    review_scorecard = load_json(os.path.join(args.working_dir, "review-scorecard.json"))
-    verification_audit = load_json(os.path.join(args.working_dir, "verification-audit.json"))
-    manifest = load_json(os.path.join(args.working_dir, "review-manifest.json"))
+    issue_registry_path = os.path.join(args.working_dir, "issue-registry.json")
+    scorecard_path = os.path.join(args.working_dir, "review-scorecard.json")
+    verification_audit_path = os.path.join(args.working_dir, "verification-audit.json")
     citation_list_path = os.path.join(args.working_dir, "citation-list.json")
+    redline_mapping_report_path = os.path.join(args.working_dir, "redline-mapping-report.json")
+    validate_input_artifacts(
+        [
+            (issue_registry_path, "issue_registry"),
+            (scorecard_path, "review_scorecard"),
+            (verification_audit_path, "verification_audit"),
+            (citation_list_path, "citation_list"),
+            (redline_mapping_report_path, "redline_mapping_report"),
+        ]
+    )
+
+    issue_registry = load_json(issue_registry_path)
+    review_scorecard = load_json(scorecard_path)
+    verification_audit = load_json(verification_audit_path)
+    manifest = load_json(os.path.join(args.working_dir, "review-manifest.json"))
     citation_list = load_json(citation_list_path) if os.path.exists(citation_list_path) else None
-    redline_mapping_report = load_json_optional(os.path.join(args.working_dir, "redline-mapping-report.json"))
+    redline_mapping_report = load_json_optional(redline_mapping_report_path)
 
     redline_path = find_first(os.path.join(args.deliverables_dir, "*_redline_v*.docx"))
     clean_path = find_first(os.path.join(args.deliverables_dir, "*_clean_v*.docx"))

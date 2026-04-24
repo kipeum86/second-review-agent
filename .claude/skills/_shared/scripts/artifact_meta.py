@@ -178,3 +178,21 @@ def validate_artifact(
     if expected_source_hash and meta.get("source_doc_hash") != expected_source_hash:
         errors.append("source_doc_hash mismatch")
     return errors
+
+
+def validate_artifacts(
+    entries: list[tuple[str | None, str | None]],
+    *,
+    require_meta: bool = False,
+) -> list[dict[str, str]]:
+    errors: list[dict[str, str]] = []
+    for artifact_path, artifact_type in entries:
+        if not artifact_path or not os.path.exists(artifact_path):
+            continue
+        for error in validate_artifact(
+            artifact_path,
+            artifact_type=artifact_type,
+            require_meta=require_meta,
+        ):
+            errors.append({"path": artifact_path, "error": error})
+    return errors

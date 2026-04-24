@@ -6,6 +6,12 @@ import tempfile
 import unittest
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+SHARED = os.path.join(REPO, ".claude", "skills", "_shared", "scripts")
+if SHARED not in sys.path:
+    sys.path.insert(0, SHARED)
+
+from artifact_meta import write_artifact_meta  # noqa: E402
+
 ASSEMBLER = os.path.join(
     REPO,
     ".claude",
@@ -173,6 +179,43 @@ class AssembleReviewOutputTests(unittest.TestCase):
 
             self.assertEqual(registry["total_issues"], 1)
             self.assertEqual(registry["issues"][0]["description"], "Legacy issue")
+
+    def test_stale_verification_audit_meta_fails_before_scoring(self) -> None:
+        with tempfile.TemporaryDirectory() as working:
+            self.seed_manifest(working)
+            audit_path = os.path.join(working, "verification-audit.json")
+            write_json(
+                audit_path,
+                {
+                    "total_citations": 1,
+                    "citations": [
+                        {
+                            "citation_id": "CIT-001",
+                            "citation_text": "Valid Case",
+                            "verification_status": "Verified",
+                        }
+                    ],
+                },
+            )
+            write_artifact_meta(audit_path, artifact_type="verification_audit")
+            write_json(
+                audit_path,
+                {
+                    "total_citations": 1,
+                    "citations": [
+                        {
+                            "citation_id": "CIT-001",
+                            "citation_text": "Changed Case",
+                            "verification_status": "Nonexistent",
+                        }
+                    ],
+                },
+            )
+
+            with self.assertRaises(subprocess.CalledProcessError) as ctx:
+                self.run_assembler(working)
+            output = (ctx.exception.stdout or "") + (ctx.exception.stderr or "")
+            self.assertIn("artifact_sha256 mismatch", output)
 
 
 if __name__ == "__main__":

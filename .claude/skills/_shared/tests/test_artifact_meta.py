@@ -10,7 +10,7 @@ SHARED = os.path.join(REPO, ".claude", "skills", "_shared", "scripts")
 VALIDATOR = os.path.join(SHARED, "validate-artifact.py")
 sys.path.insert(0, SHARED)
 
-from artifact_meta import meta_path_for, validate_artifact, write_artifact_meta  # noqa: E402
+from artifact_meta import meta_path_for, validate_artifact, validate_artifacts, write_artifact_meta  # noqa: E402
 
 
 class ArtifactMetaTests(unittest.TestCase):
@@ -48,6 +48,26 @@ class ArtifactMetaTests(unittest.TestCase):
 
             errors = validate_artifact(artifact_path, artifact_type="issue_registry")
             self.assertIn("artifact_sha256 mismatch", errors)
+
+    def test_batch_validator_allows_missing_grace_but_reports_stale_meta(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            artifact_path = os.path.join(tempdir, "issue-registry.json")
+            with open(artifact_path, "w", encoding="utf-8") as handle:
+                json.dump({"issues": []}, handle)
+            write_artifact_meta(artifact_path, artifact_type="issue_registry")
+            with open(artifact_path, "w", encoding="utf-8") as handle:
+                json.dump({"issues": [{"issue_id": "ISS-1"}]}, handle)
+
+            errors = validate_artifacts(
+                [
+                    (artifact_path, "issue_registry"),
+                    (os.path.join(tempdir, "legacy-without-meta.json"), "issue_registry"),
+                ],
+                require_meta=False,
+            )
+            self.assertEqual(len(errors), 1)
+            self.assertEqual(errors[0]["path"], artifact_path)
+            self.assertEqual(errors[0]["error"], "artifact_sha256 mismatch")
 
     def test_cli_write_meta(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
