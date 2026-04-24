@@ -289,25 +289,88 @@ def find_paragraph_containing(paragraphs, needle):
     return keyword_search(paragraphs, target, min_match=2)
 
 
-def map_issue_to_paragraph(issue, paragraphs):
+def issue_identifier(issue, fallback_index):
+    return issue.get("issue_id") or issue.get("id") or issue.get("title") or f"issue-{fallback_index}"
+
+
+def extract_anchor_text(issue):
+    location = issue.get("location", {})
+    if isinstance(location, dict):
+        for key in ("anchor_text", "text", "text_excerpt"):
+            value = sanitize_text_fragment(location.get(key))
+            if value:
+                return value
+    evidence = issue.get("evidence", {})
+    if isinstance(evidence, dict):
+        for key in ("citation_text", "anchor_text"):
+            value = sanitize_text_fragment(evidence.get(key))
+            if value:
+                return value
+    return sanitize_text_fragment(issue.get("citation_text"))
+
+
+def map_issue_to_paragraph_detail(issue, paragraphs):
     location = issue.get("location", {})
     idx = extract_paragraph_index(location)
     if idx is not None and 0 <= idx < len(paragraphs):
-        return idx
+        paragraph_text = normalize_ws(get_paragraph_text(paragraphs[idx]))
+        anchor_text = extract_anchor_text(issue)
+        if isinstance(location, dict):
+            start = location.get("char_start")
+            end = location.get("char_end")
+            if isinstance(start, int) and isinstance(end, int) and 0 <= start < end <= len(paragraph_text):
+                return {
+                    "paragraph_index": idx,
+                    "mapping_status": "exact",
+                    "reason": "location_char_span",
+                    "anchor_text": paragraph_text[start:end],
+                }
+        if anchor_text and anchor_text.lower() in paragraph_text.lower():
+            return {
+                "paragraph_index": idx,
+                "mapping_status": "exact",
+                "reason": "location_anchor_text",
+                "anchor_text": anchor_text,
+            }
+        return {
+            "paragraph_index": idx,
+            "mapping_status": "paragraph",
+            "reason": "location_paragraph_index",
+            "anchor_text": anchor_text,
+        }
 
     for field in (issue.get("title", ""), issue.get("description", ""), issue.get("recommendation", "")):
         match = re.search(r"para(?:graph)?s?\s*(\d+)", str(field), re.IGNORECASE)
         if match:
             idx = int(match.group(1))
             if 0 <= idx < len(paragraphs):
-                return idx
+                return {
+                    "paragraph_index": idx,
+                    "mapping_status": "paragraph",
+                    "reason": "textual_paragraph_reference",
+                    "anchor_text": extract_anchor_text(issue),
+                }
 
     for field in (issue.get("title", ""), issue.get("description", "")):
         idx = keyword_search(paragraphs, field)
         if idx is not None:
-            return idx
+            return {
+                "paragraph_index": idx,
+                "mapping_status": "fallback",
+                "reason": "keyword_search",
+                "anchor_text": extract_anchor_text(issue),
+            }
 
-    return None
+    return {
+        "paragraph_index": None,
+        "mapping_status": "unmapped",
+        "reason": "no_location_or_keyword_match",
+        "anchor_text": extract_anchor_text(issue),
+    }
+
+
+def map_issue_to_paragraph(issue, paragraphs):
+    return map_issue_to_paragraph_detail(issue, paragraphs).get("paragraph_index")
 
 
 def extract_text_corrections(issue):
@@ -688,15 +751,69 @@ def write_fallback_markdown(path, input_docx, issues, reason):
         f.write("\n".join(lines) + "\n")
 
 
+def build_mapping_report(total_issues, mapping_items):
+    summary = {
+        "total_issues": total_issues,
+        "exact_mapped": 0,
+        "paragraph_mapped": 0,
+        "fallback_mapped": 0,
+        "unmapped": 0,
+        "critical_major_total": 0,
+        "critical_major_exact": 0,
+        "critical_major_unmapped": 0,
+        "critical_major_exact_rate": 1.0,
+    }
+    for item in mapping_items:
+        status = item.get("mapping_status")
+        severity = item.get("severity")
+        if status == "exact":
+            summary["exact_mapped"] += 1
+        elif status == "paragraph":
+            summary["paragraph_mapped"] += 1
+        elif status == "fallback":
+            summary["fallback_mapped"] += 1
+        else:
+            summary["unmapped"] += 1
+
+        if severity in {"Critical", "Major"}:
+            summary["critical_major_total"] += 1
+            if status == "exact":
+                summary["critical_major_exact"] += 1
+            if status == "unmapped":
+                summary["critical_major_unmapped"] += 1
+
+    if summary["critical_major_total"]:
+        summary["critical_major_exact_rate"] = (
+            summary["critical_major_exact"] / summary["critical_major_total"]
+        )
+    return {
+        "generated_at": DATE,
+        "summary": summary,
+        "items": mapping_items,
+    }
+
+
+def write_mapping_report(path, report):
+    if not path:
+        return
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2, ensure_ascii=False)
+
+
 def prepare_issue_mappings(issues, redline_paragraphs):
     issue_para_map = {}
     comment_para_map = {}
     corrections_by_para = {}
     unmapped_issues = []
+    mapping_items = []
 
-    for issue in issues:
-        issue_ref = issue.get("issue_id") or issue.get("id") or issue.get("title") or f"issue-{len(issue_para_map)+1}"
-        base_para = map_issue_to_paragraph(issue, redline_paragraphs)
+    for idx, issue in enumerate(issues, 1):
+        issue_ref = issue_identifier(issue, idx)
+        detail = map_issue_to_paragraph_detail(issue, redline_paragraphs)
+        base_para = detail.get("paragraph_index")
+        mapping_status = detail.get("mapping_status", "unmapped")
+        mapping_reason = detail.get("reason")
         corrections = extract_text_corrections(issue)
         correction_para = None
 
@@ -713,13 +830,28 @@ def prepare_issue_mappings(issues, redline_paragraphs):
             corrections_by_para.setdefault(target_para, []).append(correction)
 
         chosen_para = base_para if base_para is not None else correction_para
+        if base_para is None and correction_para is not None:
+            mapping_status = "exact"
+            mapping_reason = "text_correction_match"
         if chosen_para is not None:
             issue_para_map[issue_ref] = chosen_para
             comment_para_map[issue_ref] = chosen_para
         else:
             unmapped_issues.append(issue)
 
-    return issue_para_map, comment_para_map, corrections_by_para, unmapped_issues
+        mapping_items.append(
+            {
+                "issue_id": issue_ref,
+                "severity": severity_title(issue.get("severity")),
+                "mapping_status": mapping_status if chosen_para is not None else "unmapped",
+                "target_paragraph_index": chosen_para,
+                "reason": mapping_reason if chosen_para is not None else "no_location_or_keyword_match",
+                "anchor_text": detail.get("anchor_text"),
+                "has_text_correction": bool(corrections),
+            }
+        )
+
+    return issue_para_map, comment_para_map, corrections_by_para, unmapped_issues, mapping_items
 
 
 def process_docx(input_docx, redline_output, clean_output, issues, verification_lookup, language):
@@ -771,7 +903,7 @@ def process_docx(input_docx, redline_output, clean_output, issues, verification_
             clean_body = clean_root.find(f"{{{W_NS}}}body")
             clean_paragraphs = get_all_paragraphs(clean_body) if clean_body is not None else []
 
-        issue_para_map, comment_para_map, corrections_by_para, unmapped_issues = prepare_issue_mappings(
+        issue_para_map, comment_para_map, corrections_by_para, unmapped_issues, mapping_items = prepare_issue_mappings(
             issues,
             redline_paragraphs,
         )
@@ -834,6 +966,7 @@ def process_docx(input_docx, redline_output, clean_output, issues, verification_
         "repaired_xml": repaired or clean_repaired,
         "mapped_comments": mapped_comment_count,
         "unmapped_issues": len(unmapped_issues),
+        "mapping_report": build_mapping_report(len(issues), mapping_items),
         "tracked_changes_applied": tracked_changes_applied,
         "clean_changes_applied": clean_changes_applied,
         "redline_output": redline_output,
@@ -849,6 +982,7 @@ def parse_args():
     parser.add_argument("--clean-output", dest="clean_output")
     parser.add_argument("--verification-audit", dest="verification_audit")
     parser.add_argument("--fallback-markdown", dest="fallback_markdown")
+    parser.add_argument("--mapping-report", dest="mapping_report")
     return parser.parse_args()
 
 
@@ -864,6 +998,10 @@ def main():
 
     registry, issues = load_issue_registry(args.issue_registry_json)
     verification_lookup = load_verification_lookup(args.verification_audit)
+    mapping_report_path = args.mapping_report or os.path.join(
+        os.path.dirname(args.issue_registry_json),
+        "redline-mapping-report.json",
+    )
     manifest_path = os.path.join(os.path.dirname(args.issue_registry_json), "review-manifest.json")
     language = "ko"
     if os.path.exists(manifest_path):
@@ -878,6 +1016,8 @@ def main():
         shutil.copy2(args.input_docx, args.output_redline_docx)
         if args.clean_output:
             shutil.copy2(args.input_docx, args.clean_output)
+        mapping_report = build_mapping_report(0, [])
+        write_mapping_report(mapping_report_path, mapping_report)
         summary = {
             "total_issues": 0,
             "mapped": 0,
@@ -887,6 +1027,7 @@ def main():
             "clean_changes_applied": 0,
             "redline_output": args.output_redline_docx,
             "clean_output": args.clean_output,
+            "mapping_report": mapping_report_path,
             "fallback_markdown": None,
         }
         print(json.dumps(summary, ensure_ascii=False))
@@ -901,6 +1042,7 @@ def main():
             verification_lookup,
             language,
         )
+        write_mapping_report(mapping_report_path, result["mapping_report"])
         summary = {
             "total_issues": len(issues),
             "mapped": result["mapped_comments"],
@@ -911,6 +1053,7 @@ def main():
             "repaired_xml": result["repaired_xml"],
             "redline_output": result["redline_output"],
             "clean_output": result["clean_output"],
+            "mapping_report": mapping_report_path,
             "fallback_markdown": None,
         }
         print(json.dumps(summary, ensure_ascii=False))

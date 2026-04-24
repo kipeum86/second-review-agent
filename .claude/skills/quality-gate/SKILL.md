@@ -5,7 +5,7 @@ Self-verification checklist for review outputs (WF1 Step 8).
 Primary script: `scripts/run-quality-gate.py`
 Usage: `python3 run-quality-gate.py <working_dir> <deliverables_dir> <output_path>`
 
-## 7-Item Self-Verification Checklist
+## 8-Item Self-Verification Checklist
 
 Run each check against the generated outputs. All must pass for clean delivery.
 
@@ -52,6 +52,12 @@ Run each check against the generated outputs. All must pass for clean delivery.
 - No tracked changes remaining in clean DOCX
 - Original formatting preserved for non-corrected sections
 
+### Check 6A — Redline Mapping Report
+**Verify**: `working/redline-mapping-report.json` accounts for every issue.
+- Critical/Major issues must not be `unmapped`
+- Deep Review target: Critical/Major exact mapping rate ≥90%
+- Missing report is a warning for backward compatibility, not a hard fail
+
 ### Check 7 — Release Recommendation Consistency
 **Verify**: Release recommendation follows the Release Recommendation Rules exactly.
 - If recommendation is "Pass" or "Pass with Warnings" → verify no Critical Dim 1–3 finding exists
@@ -77,7 +83,7 @@ Deliverables saved to: $SECOND_REVIEW_PRIVATE_DIR/output/{matter_id}/round_{N}/d
 On partial pass:
 ```
 ⚠️ Self-verification complete with warnings.
-Passed: 5/7 checks
+Passed: 5/8 checks
 Failed: Check 2 (comment integrity), Check 6 (clean DOCX)
 [Self-Check Warning] details attached.
 Deliverables saved to: $SECOND_REVIEW_PRIVATE_DIR/output/{matter_id}/round_{N}/deliverables/

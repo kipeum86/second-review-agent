@@ -43,7 +43,7 @@ def write_minimal_docx(path: str, *, text: str = "", comments: int = 0, insertio
 
 
 class QualityGateTests(unittest.TestCase):
-    def run_gate(self, *, issue_registry: dict, redline_comments: int) -> dict:
+    def run_gate(self, *, issue_registry: dict, redline_comments: int, mapping_report: dict | None = None) -> dict:
         with tempfile.TemporaryDirectory() as tempdir:
             working = os.path.join(tempdir, "working")
             deliverables = os.path.join(tempdir, "deliverables")
@@ -65,6 +65,8 @@ class QualityGateTests(unittest.TestCase):
                 {"total_citations": 0, "citations": []},
             )
             write_json(os.path.join(working, "review-manifest.json"), {"matter_id": "M-1", "round": 1})
+            if mapping_report is not None:
+                write_json(os.path.join(working, "redline-mapping-report.json"), mapping_report)
             write_minimal_docx(os.path.join(deliverables, "matter_redline_v1.docx"), comments=redline_comments)
             write_minimal_docx(os.path.join(deliverables, "matter_clean_v1.docx"))
             write_minimal_docx(os.path.join(deliverables, "review-cover-memo_v1.docx"), text="Pass")
@@ -101,6 +103,34 @@ class QualityGateTests(unittest.TestCase):
 
         self.assertEqual(report["overall_gate"], "WARN")
         self.assertEqual(report["blocking_failures"], [])
+
+    def test_mapping_report_unmapped_critical_major_is_fail(self) -> None:
+        report = self.run_gate(
+            issue_registry={
+                "issues": [
+                    {"issue_id": "ISS-1", "dimension": 1, "severity": "Critical"},
+                ]
+            },
+            redline_comments=1,
+            mapping_report={
+                "summary": {
+                    "total_issues": 1,
+                    "critical_major_unmapped": 1,
+                },
+                "items": [
+                    {
+                        "issue_id": "ISS-1",
+                        "severity": "Critical",
+                        "mapping_status": "unmapped",
+                    }
+                ],
+            },
+        )
+
+        self.assertEqual(report["overall_gate"], "FAIL")
+        self.assertTrue(
+            any(item["check"] == "Check 6A — Redline Mapping Report" for item in report["blocking_failures"])
+        )
 
 
 if __name__ == "__main__":
