@@ -22,6 +22,9 @@ Read `working/citation-list.json` (produced by document-parser). Each citation e
 Also read `working/review-manifest.json` for:
 - `review_depth`: quick_scan | standard | deep_review
 - `source_materials`: list of source files provided by the user (if any)
+- `review_context.citation_auditor_mode`: optional per-review native auditor override
+- `review_context.citation_auditor_reason`: optional explanation for the override
+- `review_context.citation_auditor_enforce_approved`: required before `enforce_limited` or `enforce` can be honored
 
 ## Verification Strategy: Dual-Track
 
@@ -61,11 +64,15 @@ Supported modes:
 
 When native mode is enabled:
 
-1. First produce the base verification result exactly as this agent normally would.
-2. Save that result as `working/verification-audit.base.json`.
-3. Adapt citation-auditor output with `citation-checker/scripts/adapt-citation-auditor.py`.
-4. Merge with `citation-checker/scripts/merge-verification-audits.py`.
-5. Return only the merged `working/verification-audit.json` path to the main agent.
+1. Resolve the effective mode with `citation-checker/scripts/resolve-citation-auditor-mode.py`.
+2. If the mode is `off` or `standalone_only`, produce only the base verification result as `working/verification-audit.json`.
+3. Otherwise, first produce the base verification result exactly as this agent normally would.
+4. Save that result as `working/verification-audit.base.json`.
+5. Adapt citation-auditor output with `citation-checker/scripts/adapt-citation-auditor.py`.
+6. Merge with `citation-checker/scripts/merge-verification-audits.py` using the resolved mode.
+7. Return only the final `working/verification-audit.json` path to the main agent.
+
+Mode resolution priority is explicit user/requested mode > `review_context.citation_auditor_mode` > `SECOND_REVIEW_CITATION_AUDITOR_MODE` > review-depth default. Deep Review defaults to `shadow`; Standard and Quick Scan default to `off`. If `enforce_limited` or `enforce` is requested without explicit approval, treat the resolver's downgraded `shadow` result as binding.
 
 Never pass `verified` / `contradicted` / `unknown` directly downstream. Those labels must be mapped to this agent's Verification Status Taxonomy first.
 

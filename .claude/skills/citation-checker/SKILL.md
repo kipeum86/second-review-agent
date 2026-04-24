@@ -18,14 +18,20 @@ Citation verification strategy, search execution, and audit trail assembly for t
    - Query construction templates for each legal database
    - Reference only — actual MCP calls are made by the LLM directly
 
-3. **Citation Auditor Adapter** (`scripts/adapt-citation-auditor.py`)
+3. **Citation Auditor Mode Resolver** (`scripts/resolve-citation-auditor-mode.py`)
+   - Resolves the effective native citation-auditor mode from user/requested mode, `review-manifest.json`, environment, and review depth
+   - Defaults Deep Review to `shadow`; Standard/Quick Scan to `off`
+   - Requires explicit approval for `enforce_limited` and `enforce`; otherwise downgrades to `shadow`
+   - Usage: `python3 resolve-citation-auditor-mode.py --manifest working/review-manifest.json`
+
+4. **Citation Auditor Adapter** (`scripts/adapt-citation-auditor.py`)
    - Converts citation-auditor verifier output (`verified` / `contradicted` / `unknown`) into this repo's canonical verification statuses
    - Preserves `citation_id`, `location`, and `claimed_content` from `citation-list.json`
    - Adds `auditor.reason_code`, `auditor.enforce_scope`, and `auditor.enforceable` metadata
    - Keeps bare `contradicted` verdicts conservative: no Critical status without a reason code or high-confidence rationale
    - Usage: `python3 adapt-citation-auditor.py --citation-list <citation-list.json> --auditor-results <shadow.json> --output <adapted.json>`
 
-4. **Verification Audit Merge** (`scripts/merge-verification-audits.py`)
+5. **Verification Audit Merge** (`scripts/merge-verification-audits.py`)
    - Merges the existing `citation-verifier` output with adapted citation-auditor results
    - Supports `shadow`, `diff`, `assist`, `enforce_limited`, and `enforce`
    - In `assist`, base statuses remain unchanged and auditor evidence is attached only as `supplemental_verifiers`
@@ -65,11 +71,33 @@ The citation-auditor verifier pool can be used as an optional backend inside WF1
 | Mode | Behavior |
 |---|---|
 | `off` | Existing citation-verifier only |
+| `standalone_only` | Allow `/audit` command behavior only; WF1 Step 3 remains existing verifier only |
 | `shadow` | Run auditor verifier pool and write adapted/diff artifacts; canonical `verification-audit.json` remains base |
 | `diff` | Same as shadow, with diff report emphasized for review |
 | `assist` | Keep base statuses; attach auditor evidence to base `Unverifiable_*` entries as `supplemental_verifiers` |
 | `enforce_limited` | Permit deterministic primary-source checks to update status |
 | `enforce` | Conservative full merge; only after fixture and real-matter regression review |
+
+Resolve the mode before Step 3 with:
+
+```bash
+python3 .claude/skills/citation-checker/scripts/resolve-citation-auditor-mode.py \
+  --manifest working/review-manifest.json
+```
+
+Priority order: explicit requested mode > `review_context.citation_auditor_mode` > `SECOND_REVIEW_CITATION_AUDITOR_MODE` > review-depth default. Review-depth default is `shadow` for Deep Review and `off` for Standard/Quick Scan. `enforce_limited` and `enforce` require `review_context.citation_auditor_enforce_approved=true` or an explicit `--allow-enforce`; otherwise the resolver returns `shadow` with a warning.
+
+Manifest override example:
+
+```json
+{
+  "review_context": {
+    "depth": "deep_review",
+    "citation_auditor_mode": "shadow",
+    "citation_auditor_reason": "External filing; collect shadow diffs for rollout review"
+  }
+}
+```
 
 ### Native artifact flow
 
