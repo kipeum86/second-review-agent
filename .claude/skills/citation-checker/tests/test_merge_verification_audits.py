@@ -166,13 +166,13 @@ class MergeVerificationAuditsTests(unittest.TestCase):
     def test_shadow_mode_is_base_only_rollback_equivalent(self) -> None:
         base, auditor = self.fixture_payloads()
         merged, diff = self.run_merge(base, auditor, "shadow")
-        by_id = {item["citation_id"]: item for item in merged["citations"]}
 
-        self.assertEqual(by_id["CIT-001"]["verification_status"], "Unverifiable_No_Evidence")
-        self.assertEqual(by_id["CIT-002"]["verification_status"], "Verified")
-        self.assertEqual(by_id["CIT-003"]["verification_status"], "Unsupported_Proposition")
-        self.assertNotIn("citation_auditor_evidence", by_id["CIT-001"])
+        self.assertEqual(merged, base)
         self.assertEqual(diff["decisions"]["status_changed"], 0)
+        self.assertEqual(diff["run_metrics"]["mode"], "shadow")
+        self.assertEqual(diff["run_metrics"]["base_citations"], 3)
+        self.assertEqual(diff["run_metrics"]["auditor_citations"], 3)
+        self.assertNotIn("citation_auditor_merge", merged)
 
 
 if __name__ == "__main__":

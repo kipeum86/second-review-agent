@@ -119,6 +119,9 @@ class CitationAuditorAdapterTests(unittest.TestCase):
         self.assertEqual(by_id["CIT-002"]["verification_status"], "Wrong_Pinpoint")
         self.assertEqual(by_id["CIT-003"]["verification_status"], "Unverifiable_Secondary_Only")
         self.assertEqual(by_id["CIT-003"]["authority_tier"], 4)
+        self.assertEqual(adapted["run_metrics"]["input_citations"], 3)
+        self.assertEqual(adapted["run_metrics"]["auditor_records"], 3)
+        self.assertFalse(adapted["run_metrics"]["token_estimate_available"])
 
     def test_bare_contradicted_without_reason_is_not_critical(self) -> None:
         citation_list = {

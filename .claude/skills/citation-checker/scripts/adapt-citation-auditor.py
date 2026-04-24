@@ -20,6 +20,7 @@ import json
 import os
 import re
 import sys
+import time
 from copy import deepcopy
 from datetime import datetime, timezone
 
@@ -467,6 +468,7 @@ def adapt_record(record: dict, citation: dict, match_score: int, unmatched_index
 
 
 def adapt(citation_payload: object, auditor_payload: object, review_depth_override: str | None = None) -> dict:
+    started = time.perf_counter()
     citations, review_depth = load_citation_entries(citation_payload)
     if review_depth_override:
         review_depth = review_depth_override
@@ -491,6 +493,7 @@ def adapt(citation_payload: object, auditor_payload: object, review_depth_overri
         used_ids.add(citation.get("citation_id", ""))
         adapted.append(adapt_record(record, citation, score))
 
+    enforceable_count = sum(1 for item in adapted if item.get("auditor", {}).get("enforceable"))
     return {
         "review_depth": review_depth,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -499,8 +502,19 @@ def adapt(citation_payload: object, auditor_payload: object, review_depth_overri
             "total_auditor_records": len(records),
             "adapted": len(adapted),
             "unmatched": unmatched,
-            "enforceable": sum(1 for item in adapted if item.get("auditor", {}).get("enforceable")),
+            "enforceable": enforceable_count,
             "by_status": count_by(adapted, "verification_status"),
+        },
+        "run_metrics": {
+            "elapsed_seconds": round(time.perf_counter() - started, 6),
+            "input_citations": len(citations),
+            "auditor_records": len(records),
+            "adapted_records": len(adapted),
+            "unmatched_records": unmatched,
+            "enforceable_records": enforceable_count,
+            "verifier_call_count_estimate": len(records),
+            "token_estimate_available": False,
+            "token_estimate": None,
         },
     }
 
