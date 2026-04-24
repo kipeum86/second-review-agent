@@ -36,6 +36,7 @@ An archived private design note records the earlier draft that preceded the curr
 | `/rereview` | WF3 — Re-review | Review a revised document against previous round findings |
 | `/library` | WF4 — Library Management | Manage writing samples, checklists, known-issue patterns, style profiles |
 | `/ingest` | WF5 — Source Ingest | Ingest reference sources (PDF, DOCX, etc.) into the graded library |
+| `/audit` | Standalone Citation Audit | Check citations in Markdown files and produce an annotated audit report |
 
 ### WF1: Single Document Review (8 Steps)
 
@@ -59,6 +60,8 @@ Session state is checkpointed after every step in `$SECOND_REVIEW_PRIVATE_DIR/ou
 - WF1 Step 8 uses `quality-gate/scripts/run-quality-gate.py` to emit `quality-gate-report.json`
 - WF3 RR-2 uses `document-parser/scripts/build-rereview-diff.py` to create `working/rereview-diff.json`
 - `citation-checker/scripts/build-audit-trail.py` accepts either canonical flat citation results or legacy grouped verification output and normalizes both into the current `verification-audit.json` schema
+- Deep Review can run the newer citation auditor in a safe shadow mode. Shadow results are compared against the existing citation review but do not change the final `verification-audit.json` unless later human-reviewed rollout checks approve stronger use.
+- Legal opinions, legal review memos, and cover memos use [`legal-writing-formatting-guide.md`](legal-writing-formatting-guide.md) as the public writing and formatting baseline.
 
 ## Seven Review Dimensions
 
@@ -91,6 +94,16 @@ The agent classifies every citation into one of three primary statuses:
 
 **Critical rule**: `Nonexistent` requires **positive evidence** of non-existence (authoritative database searched, no match found). When uncertain, the agent must classify as `Unverifiable_No_Evidence`.
 
+## Citation Auditor Rollout
+
+The repository includes a standalone `/audit` command for Markdown citation checks and a safer native path for WF1 Step 3.
+
+- `/audit <file.md>` is a post-hoc Markdown audit. It is useful for checking a draft or research note outside the DOCX review pipeline.
+- WF1 keeps `working/verification-audit.json` as the canonical citation artifact.
+- In Deep Review, the newer auditor can run in shadow mode and produce comparison artifacts for human review.
+- Stronger modes require reviewed shadow-diff worksheets and an explicit readiness report before they can affect review output.
+- If readiness evidence is missing or incomplete, the agent falls back to shadow-only behavior.
+
 ## Review Depth
 
 | Level | When | Citation Scope |
@@ -118,24 +131,27 @@ The agent classifies every citation into one of three primary statuses:
 
 ```text
 Main agent (CLAUDE.md orchestrator)
-  |-- Skills (14):
+  |-- Skills:
   |     document-parser, citation-checker, substance-reviewer,
   |     writing-quality-reviewer, structure-checker, formatting-reviewer,
   |     scoring-engine, known-issues-manager, quality-gate,
   |     redline-generator, cover-memo-writer, cross-document-checker,
-  |     library-manager, ingest
+  |     library-manager, ingest, citation-auditor, verifiers, _shared
   |-- Sub-agent:
   |     citation-verifier (dispatched for Standard/Deep review, and for Quick Scan citations that fail format validation)
-  |-- Python scripts (19):
+  |-- Python scripts:
   |     parse-docx-structure.py, parse-markdown-structure.py,
   |     extract-citations.py, extract-defined-terms.py, build-rereview-diff.py,
-  |     build-audit-trail.py, docx-format-inspector.py,
+  |     build-audit-trail.py, adapt-citation-auditor.py,
+  |     merge-verification-audits.py, resolve-citation-auditor-mode.py,
+  |     prepare-shadow-diff-review.py, evaluate-shadow-diff-rollout.py,
+  |     docx-format-inspector.py,
   |     ingest-sample.py, build-style-profile.py, validate-checklist.py,
   |     add-docx-comments.py, numbering-validator.py, cross-reference-checker.py,
   |     register-validator.py, style-fingerprint-compare.py, term-consistency-checker.py,
   |     assemble-review-output.py, generate-cover-memo.py, run-quality-gate.py
-  `-- Slash commands (5):
-        /review, /cross-review, /rereview, /library, /ingest
+  `-- Slash commands:
+        /review, /cross-review, /rereview, /library, /ingest, /audit
 ```
 
 ## Deliverables
@@ -148,7 +164,7 @@ Each review produces three client-facing deliverables plus runtime audit artifac
 | **Clean DOCX** | Original with only Critical/Major textual corrections accepted. No tracked changes or comments remain |
 | **Cover Memo** | 10-section review report: release recommendation (top), scorecard table, findings by severity, recurring patterns, style analysis, next steps |
 
-Additional runtime artifacts include `checkpoint.json`, `quality-gate-report.json`, and the working JSON files for parsing, verification, and scoring.
+Additional runtime artifacts include `checkpoint.json`, `quality-gate-report.json`, and the working JSON files for parsing, verification, scoring, citation-auditor comparison, and rollout review.
 
 ## Library System
 
@@ -196,8 +212,11 @@ The agent maintains a graded source library for citation verification. Drop file
 |   |   |-- cross-review.md
 |   |   |-- rereview.md
 |   |   |-- library.md
-|   |   `-- ingest.md
+|   |   |-- ingest.md
+|   |   `-- audit.md
 |   `-- skills/
+|       |-- _shared/                   # artifact metadata + validation helpers
+|       |-- citation-auditor/          # standalone Markdown citation audit
 |       |-- document-parser/           # DOCX parsing + citation/term extraction
 |       |-- citation-checker/          # verification workflow + audit trail
 |       |-- substance-reviewer/        # legal logic + client alignment (Dim 2-3)
@@ -211,7 +230,11 @@ The agent maintains a graded source library for citation verification. Drop file
 |       |-- cover-memo-writer/         # 10-section review memo
 |       |-- cross-document-checker/    # cross-doc consistency (Dim 7)
 |       |-- library-manager/           # sample/checklist/profile management
+|       |-- verifiers/                 # jurisdiction/source-specific citation verifiers
 |       `-- ingest/                    # source file ingest into graded library
+|-- citation_auditor/                  # standalone auditor package
+|-- legal-writing-formatting-guide.md  # public EN/KO memo writing and formatting guide
+|-- requirements.txt
 |-- library/
 |   |-- inbox/                         # gitignored; drop source files here for /ingest
 |   |   |-- _processed/                # originals moved here after ingest
@@ -258,6 +281,14 @@ $SECOND_REVIEW_PRIVATE_DIR/
 3. Run `/review` or simply ask: "Review this document."
 4. The agent runs the 8-step pipeline and produces deliverables in `$SECOND_REVIEW_PRIVATE_DIR/output/`.
 5. Interrupted sessions resume automatically from the last checkpoint.
+
+### Running a standalone Markdown citation audit
+
+```text
+/audit $SECOND_REVIEW_PRIVATE_DIR/input/research-note.md
+```
+
+Use `/audit` for Markdown files. DOCX reviews should continue to use `/review`, which keeps the native DOCX parsing and redline pipeline.
 
 **Example prompts:**
 
