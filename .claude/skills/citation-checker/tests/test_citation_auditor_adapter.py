@@ -151,6 +151,74 @@ class CitationAuditorAdapterTests(unittest.TestCase):
         self.assertEqual(citation["verification_status"], "Unverifiable_No_Evidence")
         self.assertFalse(citation["auditor"]["enforceable"])
 
+    def test_nonexistent_requires_positive_evidence_not_just_url(self) -> None:
+        citation_list = {
+            "citations": [
+                {
+                    "citation_id": "CIT-001",
+                    "citation_text": "대법원 2099다999999",
+                    "citation_type": "case",
+                    "jurisdiction": "KR",
+                    "location": {"paragraph_index": 1},
+                    "claimed_content": "대법원 2099다999999 판결은 이 결론을 지지한다.",
+                }
+            ]
+        }
+        auditor_results = {
+            "citations": [
+                {
+                    "citation_id": "CIT-001",
+                    "auditor_verdict": {
+                        "label": "contradicted",
+                        "reason_code": "nonexistent_authority",
+                        "verifier_name": "korean-law",
+                        "rationale": "일반 참고 URL만 있습니다.",
+                        "supporting_urls": ["https://example.com/search"],
+                    },
+                }
+            ]
+        }
+
+        adapted = self.run_adapter(citation_list, auditor_results)
+        citation = adapted["citations"][0]
+        self.assertEqual(citation["verification_status"], "Unverifiable_No_Evidence")
+        self.assertFalse(citation["auditor"]["enforceable"])
+
+    def test_verifier_cannot_self_assign_authority_tier(self) -> None:
+        citation_list = {
+            "citations": [
+                {
+                    "citation_id": "CIT-001",
+                    "citation_text": "시장 규모 15%",
+                    "citation_type": "source",
+                    "location": {"paragraph_index": 1},
+                    "claimed_content": "시장 규모는 15% 성장하였다.",
+                }
+            ]
+        }
+        auditor_results = {
+            "citations": [
+                {
+                    "citation_id": "CIT-001",
+                    "auditor_verdict": {
+                        "label": "verified",
+                        "verifier_name": "general-web",
+                        "authority_tier": 1,
+                        "authority_label": "Primary Law",
+                        "rationale": "웹 자료입니다.",
+                        "evidence": [{"url": "https://example.com/report", "excerpt": "15% growth"}],
+                    },
+                }
+            ]
+        }
+
+        adapted = self.run_adapter(citation_list, auditor_results)
+        citation = adapted["citations"][0]
+        self.assertEqual(citation["authority_tier"], 4)
+        self.assertEqual(citation["verification_status"], "Unverifiable_Secondary_Only")
+        self.assertEqual(citation["evidence"]["excerpt"], "15% growth")
+        self.assertEqual(citation["evidence"]["auditor_rationale"], "웹 자료입니다.")
+
 
 if __name__ == "__main__":
     unittest.main()

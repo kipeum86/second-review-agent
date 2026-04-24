@@ -6,10 +6,10 @@ Supports Korean, US, and EU citation formats.
 Usage: python3 extract-citations.py <parsed_structure_json> <output_path>
 """
 
-import sys
 import os
 import json
 import re
+import sys
 
 # ── Korean Citation Patterns ──
 
@@ -81,43 +81,96 @@ EU_TREATY_RE = re.compile(
 )
 
 
+SENTENCE_END_RE = re.compile(r'[.!?。]\s+|[.!?。]$')
+
+
 def get_context(paragraphs: list[dict], para_idx: int, match_start: int, match_end: int) -> str:
     """Get surrounding sentence context for a citation."""
-    text = paragraphs[para_idx]['text'] if para_idx < len(paragraphs) else ''
-    # Find sentence boundaries
-    sent_start = max(0, text.rfind('.', 0, match_start) + 1)
-    sent_end = text.find('.', match_end)
-    if sent_end == -1:
-        sent_end = len(text)
+    if para_idx < len(paragraphs) and paragraphs[para_idx].get('index') == para_idx:
+        paragraph = paragraphs[para_idx]
     else:
-        sent_end += 1
+        paragraph = next((item for item in paragraphs if item.get('index') == para_idx), {})
+    text = paragraph.get('text', '')
+    sent_start = 0
+    for boundary in SENTENCE_END_RE.finditer(text[:match_start]):
+        sent_start = boundary.end()
+    next_boundary = SENTENCE_END_RE.search(text[match_end:])
+    sent_end = match_end + next_boundary.end() if next_boundary else len(text)
     return text[sent_start:sent_end].strip()
+
+
+def normalize_citation_key(citation_type: str, jurisdiction: str, citation_text: str) -> str:
+    """Create a grouping key without collapsing separate occurrences."""
+    normalized = re.sub(r'\s+', '', citation_text or '').lower()
+    normalized = normalized.replace('「', '').replace('」', '')
+    normalized = re.sub(r'[^\w가-힣§./()-]+', '', normalized)
+    return f'{citation_type}:{jurisdiction}:{normalized}'
+
+
+def add_citation(
+    citations: list[dict],
+    *,
+    citation_text: str,
+    citation_type: str,
+    jurisdiction: str,
+    para_idx: int,
+    match_start: int,
+    match_end: int,
+    paragraphs: list[dict],
+    **extra,
+) -> None:
+    """Append one citation occurrence while preserving legacy fields."""
+    sequence = len(citations) + 1
+    normalized_key = normalize_citation_key(citation_type, jurisdiction, citation_text)
+    source_location = {
+        'paragraph_index': para_idx,
+        'char_start': match_start,
+        'char_end': match_end,
+    }
+    citation = {
+        'citation_id': f'CIT-{sequence:03d}',
+        'occurrence_id': f'OCC-{sequence:03d}',
+        'normalized_citation_key': normalized_key,
+        'dedupe_group': normalized_key,
+        'citation_text': citation_text,
+        'citation_type': citation_type,
+        'jurisdiction': jurisdiction,
+        'location': dict(source_location),
+        'source_location': dict(source_location),
+        'claimed_content': get_context(paragraphs, para_idx, match_start, match_end),
+    }
+    citation.update(extra)
+    citations.append(citation)
+
+
+def spans_overlap(a: tuple[int, int], b: tuple[int, int]) -> bool:
+    return a[0] < b[1] and b[0] < a[1]
 
 
 def extract_citations(parsed_structure: dict) -> list[dict]:
     """Extract all citations from parsed paragraphs."""
     paragraphs = parsed_structure.get('paragraphs', [])
     citations = []
-    seen = set()  # Deduplicate identical citations
 
     for para in paragraphs:
         text = para.get('text', '')
         if not text:
             continue
         para_idx = para['index']
+        occupied_case_spans = []
 
         # Korean statutes by number
         for m in KR_STATUTE_NUM_RE.finditer(text):
-            key = ('kr_statute_num', m.group(0))
-            if key not in seen:
-                seen.add(key)
-                citations.append({
-                    'citation_text': m.group(0),
-                    'citation_type': 'statute',
-                    'jurisdiction': 'KR',
-                    'location': {'paragraph_index': para_idx},
-                    'claimed_content': get_context(paragraphs, para_idx, m.start(), m.end()),
-                })
+            add_citation(
+                citations,
+                citation_text=m.group(0),
+                citation_type='statute',
+                jurisdiction='KR',
+                para_idx=para_idx,
+                match_start=m.start(),
+                match_end=m.end(),
+                paragraphs=paragraphs,
+            )
 
         # Korean named statutes
         for m in KR_STATUTE_NAME_RE.finditer(text):
@@ -127,121 +180,126 @@ def extract_citations(parsed_structure: dict) -> list[dict]:
                 continue
             # Check if it looks like a law name (ends with 법, 령, 규칙, etc.)
             if re.search(r'(?:법|령|규칙|조약|협약|협정|규정|지침|고시|훈령)$', name):
-                key = ('kr_statute_name', name)
-                if key not in seen:
-                    seen.add(key)
-                    # Also look for article references near this statute name
-                    article_match = KR_ARTICLE_REF_RE.search(text[m.end():m.end()+50])
-                    article_ref = article_match.group(0) if article_match else None
-                    citations.append({
-                        'citation_text': m.group(0) + (f' {article_ref}' if article_ref else ''),
-                        'citation_type': 'statute',
-                        'jurisdiction': 'KR',
-                        'statute_name': name,
-                        'article_ref': article_ref,
-                        'location': {'paragraph_index': para_idx},
-                        'claimed_content': get_context(paragraphs, para_idx, m.start(), m.end()),
-                    })
+                # Also look for article references near this statute name
+                article_match = KR_ARTICLE_REF_RE.search(text[m.end():m.end()+50])
+                article_ref = article_match.group(0) if article_match else None
+                match_end = m.end() + article_match.end() if article_match else m.end()
+                add_citation(
+                    citations,
+                    citation_text=m.group(0) + (f' {article_ref}' if article_ref else ''),
+                    citation_type='statute',
+                    jurisdiction='KR',
+                    para_idx=para_idx,
+                    match_start=m.start(),
+                    match_end=match_end,
+                    paragraphs=paragraphs,
+                    statute_name=name,
+                    article_ref=article_ref,
+                )
 
         # Korean case numbers
         for m in KR_CASE_RE.finditer(text):
-            key = ('kr_case', m.group(0))
-            if key not in seen:
-                seen.add(key)
-                citations.append({
-                    'citation_text': m.group(0).strip(),
-                    'citation_type': 'case',
-                    'jurisdiction': 'KR',
-                    'location': {'paragraph_index': para_idx},
-                    'claimed_content': get_context(paragraphs, para_idx, m.start(), m.end()),
-                })
+            occupied_case_spans.append((m.start(), m.end()))
+            add_citation(
+                citations,
+                citation_text=m.group(0).strip(),
+                citation_type='case',
+                jurisdiction='KR',
+                para_idx=para_idx,
+                match_start=m.start(),
+                match_end=m.end(),
+                paragraphs=paragraphs,
+            )
 
         # Simplified Korean case pattern (fallback)
         for m in KR_CASE_SIMPLE_RE.finditer(text):
+            if any(spans_overlap((m.start(), m.end()), span) for span in occupied_case_spans):
+                continue
             # Only if preceded by court name context
             prefix = text[max(0, m.start()-20):m.start()]
             if re.search(r'(?:대법원|법원|판결|선고)', prefix):
-                key = ('kr_case_simple', m.group(0))
-                if key not in seen:
-                    seen.add(key)
-                    citations.append({
-                        'citation_text': m.group(0).strip(),
-                        'citation_type': 'case',
-                        'jurisdiction': 'KR',
-                        'location': {'paragraph_index': para_idx},
-                        'claimed_content': get_context(paragraphs, para_idx, m.start(), m.end()),
-                    })
+                add_citation(
+                    citations,
+                    citation_text=m.group(0).strip(),
+                    citation_type='case',
+                    jurisdiction='KR',
+                    para_idx=para_idx,
+                    match_start=m.start(),
+                    match_end=m.end(),
+                    paragraphs=paragraphs,
+                )
 
         # US Code
         for m in US_CODE_RE.finditer(text):
-            key = ('us_code', m.group(0))
-            if key not in seen:
-                seen.add(key)
-                citations.append({
-                    'citation_text': m.group(0).strip(),
-                    'citation_type': 'statute',
-                    'jurisdiction': 'US',
-                    'title': m.group(1),
-                    'section': m.group(2),
-                    'location': {'paragraph_index': para_idx},
-                    'claimed_content': get_context(paragraphs, para_idx, m.start(), m.end()),
-                })
+            add_citation(
+                citations,
+                citation_text=m.group(0).strip(),
+                citation_type='statute',
+                jurisdiction='US',
+                para_idx=para_idx,
+                match_start=m.start(),
+                match_end=m.end(),
+                paragraphs=paragraphs,
+                title=m.group(1),
+                section=m.group(2),
+            )
 
         # US CFR
         for m in US_CFR_RE.finditer(text):
-            key = ('us_cfr', m.group(0))
-            if key not in seen:
-                seen.add(key)
-                citations.append({
-                    'citation_text': m.group(0).strip(),
-                    'citation_type': 'regulation',
-                    'jurisdiction': 'US',
-                    'location': {'paragraph_index': para_idx},
-                    'claimed_content': get_context(paragraphs, para_idx, m.start(), m.end()),
-                })
+            add_citation(
+                citations,
+                citation_text=m.group(0).strip(),
+                citation_type='regulation',
+                jurisdiction='US',
+                para_idx=para_idx,
+                match_start=m.start(),
+                match_end=m.end(),
+                paragraphs=paragraphs,
+            )
 
         # US cases
         for m in US_CASE_RE.finditer(text):
-            key = ('us_case', m.group(0))
-            if key not in seen:
-                seen.add(key)
-                citations.append({
-                    'citation_text': m.group(0).strip(),
-                    'citation_type': 'case',
-                    'jurisdiction': 'US',
-                    'location': {'paragraph_index': para_idx},
-                    'claimed_content': get_context(paragraphs, para_idx, m.start(), m.end()),
-                })
+            add_citation(
+                citations,
+                citation_text=m.group(0).strip(),
+                citation_type='case',
+                jurisdiction='US',
+                para_idx=para_idx,
+                match_start=m.start(),
+                match_end=m.end(),
+                paragraphs=paragraphs,
+            )
 
         # EU regulations/directives
         for m in EU_REG_RE.finditer(text):
-            key = ('eu_reg', m.group(0))
-            if key not in seen:
-                seen.add(key)
-                citations.append({
-                    'citation_text': m.group(0).strip(),
-                    'citation_type': 'regulation',
-                    'jurisdiction': 'EU',
-                    'location': {'paragraph_index': para_idx},
-                    'claimed_content': get_context(paragraphs, para_idx, m.start(), m.end()),
-                })
+            add_citation(
+                citations,
+                citation_text=m.group(0).strip(),
+                citation_type='regulation',
+                jurisdiction='EU',
+                para_idx=para_idx,
+                match_start=m.start(),
+                match_end=m.end(),
+                paragraphs=paragraphs,
+            )
 
         # EU treaty articles
         for m in EU_TREATY_RE.finditer(text):
-            key = ('eu_treaty', m.group(0))
-            if key not in seen:
-                seen.add(key)
-                citations.append({
-                    'citation_text': m.group(0).strip(),
-                    'citation_type': 'treaty',
-                    'jurisdiction': 'EU',
-                    'location': {'paragraph_index': para_idx},
-                    'claimed_content': get_context(paragraphs, para_idx, m.start(), m.end()),
-                })
+            add_citation(
+                citations,
+                citation_text=m.group(0).strip(),
+                citation_type='treaty',
+                jurisdiction='EU',
+                para_idx=para_idx,
+                match_start=m.start(),
+                match_end=m.end(),
+                paragraphs=paragraphs,
+            )
 
-    # Sort by priority: statutes & cases first, then regulations, then others
-    type_priority = {'statute': 0, 'case': 1, 'regulation': 2, 'treaty': 3}
-    citations.sort(key=lambda c: (type_priority.get(c['citation_type'], 9), c['location']['paragraph_index']))
+    citations.sort(key=lambda c: (c['location']['paragraph_index'], c['location'].get('char_start', 0)))
+    for idx, citation in enumerate(citations, 1):
+        citation['citation_id'] = f'CIT-{idx:03d}'
+        citation['occurrence_id'] = f'OCC-{idx:03d}'
 
     return citations
 
@@ -274,9 +332,16 @@ def main():
         output['by_type'][ctype] = output['by_type'].get(ctype, 0) + 1
         output['by_jurisdiction'][jur] = output['by_jurisdiction'].get(jur, 0) + 1
 
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
+
+    if output_dir and os.path.basename(output_path) != 'citation-occurrences.json':
+        occurrence_path = os.path.join(output_dir, 'citation-occurrences.json')
+        with open(occurrence_path, 'w', encoding='utf-8') as f:
+            json.dump({**output, 'artifact_type': 'citation_occurrences'}, f, indent=2, ensure_ascii=False)
 
     # Print summary to stdout
     result = {
