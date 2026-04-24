@@ -148,9 +148,11 @@ Without context, Dimension 3 (Client Alignment) is explicitly skipped with reaso
 | Page size | A4 for Korean docs. US Letter for US-jurisdiction English docs. A4 for all others. |
 | Primary format | **Output format must match input format.** See Format Matching Rule below. |
 
-### Korean Legal Opinion Style Guide (MANDATORY)
+### Legal Memo Style Guides (MANDATORY)
 
-한국어 법률 의견서를 생성하거나 검토할 때, 반드시 `_private/ko-legal-opinion-style-guide.md`를 읽고 해당 스타일 규칙을 따를 것. 이 가이드는 전문 형식의 한국어 법률 문서 샘플에서 추출한 문서 구조, 법령/판례 인용 형식, 문체, 확신도 표현 체계, 번호 매김, 타이포그래피 규칙을 포함합니다.
+법률 의견서, 법률 검토 메모, 커버 메모를 생성하거나 검토할 때, 먼저 `legal-writing-formatting-guide.md`를 읽고 공개용 기본 형식 기준으로 적용할 것. 이 가이드는 영어/한국어 법률 메모의 문서 구조, 확신도 표현, 인용 검증 안내, AI 생성 고지, 면책 문구, 서식 규칙을 포함합니다.
+
+한국어 법률 의견서를 생성하거나 검토할 때는 추가로 `_private/ko-legal-opinion-style-guide.md`를 읽고 해당 스타일 규칙을 따를 것. 비공개 한국어 가이드는 전문 형식의 한국어 법률 문서 샘플에서 추출한 문서 구조, 법령/판례 인용 형식, 문체, 확신도 표현 체계, 번호 매김, 타이포그래피 규칙을 포함합니다.
 
 **적용 범위:** 한국어 법률 의견서, 법률 검토 메모, 클라이언트 대면 법률 문서 전반.
 
