@@ -1,0 +1,13 @@
+{
+  "CIT-001": {"verification_status": "Verified", "authority_tier": 1, "enforceable": true, "reason_code": "primary_supports_claim"},
+  "CIT-002": {"verification_status": "Wrong_Pinpoint", "authority_tier": 1, "enforceable": true, "reason_code": "wrong_pinpoint"},
+  "CIT-003": {"verification_status": "Nonexistent", "authority_tier": 1, "enforceable": false, "reason_code": "nonexistent_authority"},
+  "CIT-004": {"verification_status": "Verified", "authority_tier": 1, "enforceable": true, "reason_code": "primary_supports_claim"},
+  "CIT-005": {"verification_status": "Wrong_Pinpoint", "authority_tier": 1, "enforceable": true, "reason_code": "wrong_pinpoint"},
+  "CIT-006": {"verification_status": "Unverifiable_Secondary_Only", "authority_tier": 4, "enforceable": false, "reason_code": "secondary_only"},
+  "CIT-007": {"verification_status": "Unverifiable_No_Access", "authority_tier": 3, "enforceable": false, "reason_code": "no_access"},
+  "CIT-008": {"verification_status": "Wrong_Jurisdiction", "authority_tier": 1, "enforceable": false, "reason_code": "wrong_jurisdiction"},
+  "CIT-009": {"verification_status": "Translation_Mismatch", "authority_tier": 1, "enforceable": false, "reason_code": "translation_mismatch"},
+  "CIT-010": {"verification_status": "Unverifiable_No_Evidence", "authority_tier": 1, "enforceable": false, "reason_code": "wrong_pinpoint"},
+  "CIT-011": {"verification_status": "Unverifiable_Secondary_Only", "authority_tier": 4, "enforceable": false, "reason_code": "primary_supports_claim"}
+}

@@ -1,0 +1,93 @@
+{
+  "review_depth": "deep_review",
+  "citations": [
+    {
+      "citation_id": "CIT-001",
+      "citation_text": "민법 제103조",
+      "citation_type": "statute",
+      "jurisdiction": "KR",
+      "location": {"paragraph_index": 1},
+      "claimed_content": "민법 제103조는 반사회질서 법률행위를 무효로 한다."
+    },
+    {
+      "citation_id": "CIT-002",
+      "citation_text": "민법 제999조 제1항",
+      "citation_type": "statute",
+      "jurisdiction": "KR",
+      "location": {"paragraph_index": 2},
+      "claimed_content": "민법 제999조 제1항은 손해배상 기준을 정한다."
+    },
+    {
+      "citation_id": "CIT-003",
+      "citation_text": "대법원 2099다999999",
+      "citation_type": "case",
+      "jurisdiction": "KR",
+      "location": {"paragraph_index": 3},
+      "claimed_content": "대법원 2099다999999 판결은 이 결론을 지지한다."
+    },
+    {
+      "citation_id": "CIT-004",
+      "citation_text": "15 U.S.C. § 78j(b)",
+      "citation_type": "statute",
+      "jurisdiction": "US",
+      "location": {"paragraph_index": 4},
+      "claimed_content": "15 U.S.C. § 78j(b)는 증권 사기를 금지한다."
+    },
+    {
+      "citation_id": "CIT-005",
+      "citation_text": "Regulation (EU) 2016/679 Article 99",
+      "citation_type": "regulation",
+      "jurisdiction": "EU",
+      "location": {"paragraph_index": 5},
+      "claimed_content": "GDPR Article 99 sets data processing consent requirements."
+    },
+    {
+      "citation_id": "CIT-006",
+      "citation_text": "2023 market report",
+      "citation_type": "source",
+      "jurisdiction": "US",
+      "location": {"paragraph_index": 6},
+      "claimed_content": "The 2023 market grew by 15%."
+    },
+    {
+      "citation_id": "CIT-007",
+      "citation_text": "Paywalled Journal Article",
+      "citation_type": "source",
+      "jurisdiction": "US",
+      "location": {"paragraph_index": 7},
+      "claimed_content": "The paywalled article supports the factual claim."
+    },
+    {
+      "citation_id": "CIT-008",
+      "citation_text": "California Civil Code § 1636",
+      "citation_type": "statute",
+      "jurisdiction": "US-CA",
+      "location": {"paragraph_index": 8},
+      "claimed_content": "California Civil Code § 1636 states the rule under New York law."
+    },
+    {
+      "citation_id": "CIT-009",
+      "citation_text": "민법 제390조",
+      "citation_type": "statute",
+      "jurisdiction": "KR",
+      "location": {"paragraph_index": 9},
+      "claimed_content": "민법 제390조의 영문 번역은 punitive damages를 인정한다고 한다."
+    },
+    {
+      "citation_id": "CIT-010",
+      "citation_text": "민법 제750조 제1항",
+      "citation_type": "statute",
+      "jurisdiction": "KR",
+      "location": {"paragraph_index": 10},
+      "claimed_content": "민법 제750조 제1항은 불법행위 책임을 정한다."
+    },
+    {
+      "citation_id": "CIT-011",
+      "citation_text": "Vendor Blog Market Note",
+      "citation_type": "source",
+      "jurisdiction": "US",
+      "location": {"paragraph_index": 11},
+      "claimed_content": "A vendor blog proves the legal conclusion."
+    }
+  ]
+}
