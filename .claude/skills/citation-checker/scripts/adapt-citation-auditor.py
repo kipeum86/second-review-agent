@@ -60,6 +60,14 @@ STATUS_BY_REASON_CODE = {
     "no_evidence": "Unverifiable_No_Evidence",
 }
 
+CRITICAL_REASON_CODES = {
+    "nonexistent_authority",
+    "wrong_pinpoint",
+    "unsupported_proposition",
+}
+
+LOW_CONFIDENCE_VALUES = {"low", "weak", "uncertain", "ambiguous", "inferred_missing_reason_code"}
+
 ALLOWED_ENFORCE_SCOPES = {
     "kr_statute_article_exists",
     "kr_statute_pinpoint_exists",
@@ -74,6 +82,44 @@ ALLOWED_ENFORCE_SCOPES = {
 def load_json(path: str) -> object:
     with open(path, "r", encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def extract_json_candidate(text: str) -> object | None:
+    for opener, closer in (("{", "}"), ("[", "]")):
+        start = text.find(opener)
+        end = text.rfind(closer)
+        if start == -1 or end == -1 or end <= start:
+            continue
+        try:
+            return json.loads(text[start : end + 1])
+        except json.JSONDecodeError:
+            continue
+    return None
+
+
+def load_auditor_results(path: str) -> tuple[object, list[dict]]:
+    warnings = []
+    with open(path, "r", encoding="utf-8") as handle:
+        raw = handle.read()
+    try:
+        return json.loads(raw), warnings
+    except json.JSONDecodeError as exc:
+        repaired = extract_json_candidate(raw)
+        if repaired is not None:
+            warnings.append(
+                {
+                    "code": "auditor_json_repaired",
+                    "message": f"Auditor results contained non-JSON wrapper text and were repaired: {exc}",
+                }
+            )
+            return repaired, warnings
+        warnings.append(
+            {
+                "code": "auditor_json_discarded",
+                "message": f"Auditor results were not valid JSON and could not be repaired: {exc}",
+            }
+        )
+        return {}, warnings
 
 
 def write_json(path: str, payload: object) -> None:
@@ -278,7 +324,15 @@ def infer_reason_code(record: dict) -> tuple[str, str]:
     return "no_evidence", "inferred"
 
 
-def status_for_record(record: dict, reason_code: str) -> str:
+def is_low_confidence(reason_confidence: str) -> bool:
+    return normalize_space(reason_confidence).lower() in LOW_CONFIDENCE_VALUES
+
+
+def status_for_record(record: dict, reason_code: str, reason_confidence: str) -> str:
+    if reason_code == "primary_supports_claim" and record.get("verifier_name") in LOW_TRUST_VERIFIERS:
+        return "Unverifiable_Secondary_Only"
+    if record.get("label") == "contradicted" and reason_code in CRITICAL_REASON_CODES and is_low_confidence(reason_confidence):
+        return "Unverifiable_No_Evidence"
     status = STATUS_BY_REASON_CODE.get(reason_code, "Unverifiable_No_Evidence")
     if record.get("label") == "contradicted" and reason_code == "no_evidence":
         return "Unverifiable_No_Evidence"
@@ -424,7 +478,7 @@ def is_enforceable(record: dict, citation: dict, status: str, reason_code: str) 
 
 def adapt_record(record: dict, citation: dict, match_score: int, unmatched_index: int | None = None) -> dict:
     reason_code, reason_confidence = infer_reason_code(record)
-    status = status_for_record(record, reason_code)
+    status = status_for_record(record, reason_code, reason_confidence)
     tier, tier_label = authority_for_record(record)
     evidence = build_evidence(record, reason_code)
     enforce_scope = derive_enforce_scope(citation, record, reason_code)
@@ -467,7 +521,12 @@ def adapt_record(record: dict, citation: dict, match_score: int, unmatched_index
     return adapted
 
 
-def adapt(citation_payload: object, auditor_payload: object, review_depth_override: str | None = None) -> dict:
+def adapt(
+    citation_payload: object,
+    auditor_payload: object,
+    review_depth_override: str | None = None,
+    adapter_warnings: list[dict] | None = None,
+) -> dict:
     started = time.perf_counter()
     citations, review_depth = load_citation_entries(citation_payload)
     if review_depth_override:
@@ -505,6 +564,7 @@ def adapt(citation_payload: object, auditor_payload: object, review_depth_overri
             "enforceable": enforceable_count,
             "by_status": count_by(adapted, "verification_status"),
         },
+        "adapter_warnings": adapter_warnings or [],
         "run_metrics": {
             "elapsed_seconds": round(time.perf_counter() - started, 6),
             "input_citations": len(citations),
@@ -539,8 +599,13 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     citation_payload = load_json(args.citation_list)
-    auditor_payload = load_json(args.auditor_results)
-    output = adapt(citation_payload, auditor_payload, review_depth_override=args.review_depth)
+    auditor_payload, warnings = load_auditor_results(args.auditor_results)
+    output = adapt(
+        citation_payload,
+        auditor_payload,
+        review_depth_override=args.review_depth,
+        adapter_warnings=warnings,
+    )
     write_json(args.output, output)
     write_artifact_meta(
         args.output,
