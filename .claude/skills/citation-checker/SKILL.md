@@ -44,6 +44,11 @@ Citation verification strategy, search execution, and audit trail assembly for t
    - Keeps rollout gates conservative: generated worksheets are `pending_human_review` and never mark assist/enforce readiness automatically
    - Usage: `python3 prepare-shadow-diff-review.py --diff working/citation-auditor-diff.json --manifest working/review-manifest.json --output working/shadow-diff-review.json`
 
+7. **Shadow Diff Rollout Evaluator** (`scripts/evaluate-shadow-diff-rollout.py`)
+   - Aggregates human-reviewed `shadow-diff-review.json` files into a rollout readiness report
+   - Keeps recommendation at `keep_shadow` unless review counts, KR coverage, explicit reviewer readiness, and false-positive thresholds pass
+   - Usage: `python3 evaluate-shadow-diff-rollout.py <review-dir> --output working/shadow-diff-rollout-report.json`
+
 ## Verification Workflow per Citation
 
 ```
@@ -128,6 +133,7 @@ working/citation-list.json
 - Do not use the citation-auditor markdown renderer for DOCX review output.
 - Do not downgrade an existing Critical base finding to `Verified` solely because citation-auditor returned `verified`.
 - Before enabling `assist` or `enforce_limited` for real use, create and review `shadow-diff-review.json` for real matters. Do not treat generated worksheets as human-reviewed until `rollout_gate_observations.human_reviewed=true` is set by a reviewer.
+- Use `evaluate-shadow-diff-rollout.py` to aggregate reviewed worksheets. `assist` requires at least 5 human-reviewed diffs explicitly marked ready with zero false-positive Critical findings. `enforce_limited` additionally requires at least 10 human-reviewed diffs, at least 5 KR statute/case matters, at least 5 explicit ready-for-enforce reviews, and zero false-positive `Nonexistent` findings.
 
 ## Source Authority Classification
 
