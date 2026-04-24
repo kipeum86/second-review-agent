@@ -2,6 +2,8 @@
 
 Generate the review cover memo in senior review specialist voice.
 
+Before writing a memo, use the repository root `legal-writing-formatting-guide.md` as the public baseline for legal memo structure, confidence language, AI-generation notice/disclaimer treatment, and professional formatting. If its general memo architecture conflicts with the 10 mandatory review-cover-memo sections below, keep the 10 sections as the controlling Step 7 contract and apply the guide to tone, clarity, headings, and formatting.
+
 ## When to Use
 
 - WF1 Step 7: Output Generation
