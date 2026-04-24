@@ -31,7 +31,7 @@ _SHARED_SCRIPTS = os.path.abspath(
 if _SHARED_SCRIPTS not in sys.path:
     sys.path.insert(0, _SHARED_SCRIPTS)
 
-from artifact_meta import write_artifact_meta  # noqa: E402
+from artifact_meta import validate_artifacts, write_artifact_meta  # noqa: E402
 
 # --- OOXML Namespaces ---
 NAMESPACES = {
@@ -203,6 +203,25 @@ def get_author(language):
 def load_json(path):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def fail_artifact_validation(errors):
+    print(
+        json.dumps(
+            {
+                "error": "Artifact validation failed",
+                "validation_errors": errors,
+            },
+            ensure_ascii=False,
+        )
+    )
+    sys.exit(1)
+
+
+def validate_input_artifacts(entries):
+    errors = validate_artifacts(entries, require_meta=False)
+    if errors:
+        fail_artifact_validation(errors)
 
 
 def load_issue_registry(path):
@@ -1009,6 +1028,12 @@ def main():
         print(json.dumps({"error": f"Input is not a valid DOCX/ZIP file: {args.input_docx}"}, ensure_ascii=False))
         sys.exit(1)
 
+    validate_input_artifacts(
+        [
+            (args.issue_registry_json, "issue_registry"),
+            (args.verification_audit, "verification_audit"),
+        ]
+    )
     registry, issues = load_issue_registry(args.issue_registry_json)
     verification_lookup = load_verification_lookup(args.verification_audit)
     mapping_report_path = args.mapping_report or os.path.join(

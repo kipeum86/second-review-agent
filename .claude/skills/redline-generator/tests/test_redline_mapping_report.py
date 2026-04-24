@@ -7,6 +7,12 @@ import unittest
 import zipfile
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+SHARED = os.path.join(REPO, ".claude", "skills", "_shared", "scripts")
+if SHARED not in sys.path:
+    sys.path.insert(0, SHARED)
+
+from artifact_meta import write_artifact_meta  # noqa: E402
+
 REDLINE = os.path.join(
     REPO,
     ".claude",
@@ -100,6 +106,39 @@ class RedlineMappingReportTests(unittest.TestCase):
             self.assertEqual(by_id["ISS-3"]["mapping_status"], "fallback")
             self.assertEqual(by_id["ISS-4"]["mapping_status"], "unmapped")
             self.assertEqual(report["summary"]["critical_major_unmapped"], 1)
+
+    def test_stale_issue_registry_meta_fails_before_redline(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            input_docx = os.path.join(tempdir, "input.docx")
+            issue_path = os.path.join(tempdir, "issue-registry.json")
+            output_docx = os.path.join(tempdir, "redline.docx")
+            write_minimal_docx(input_docx)
+            write_json(os.path.join(tempdir, "review-manifest.json"), {"matter_id": "M-1", "round": 1})
+            write_json(issue_path, {"issues": []})
+            write_artifact_meta(issue_path, artifact_type="issue_registry")
+            write_json(
+                issue_path,
+                {
+                    "issues": [
+                        {
+                            "issue_id": "ISS-1",
+                            "severity": "Critical",
+                            "location": {"paragraph_index": 0},
+                            "description": "변경된 이슈",
+                        }
+                    ]
+                },
+            )
+
+            with self.assertRaises(subprocess.CalledProcessError) as ctx:
+                subprocess.run(
+                    [sys.executable, REDLINE, input_docx, issue_path, output_docx],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+            output = (ctx.exception.stdout or "") + (ctx.exception.stderr or "")
+            self.assertIn("artifact_sha256 mismatch", output)
 
 
 if __name__ == "__main__":

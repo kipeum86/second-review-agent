@@ -7,6 +7,12 @@ import unittest
 import zipfile
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+SHARED = os.path.join(REPO, ".claude", "skills", "_shared", "scripts")
+if SHARED not in sys.path:
+    sys.path.insert(0, SHARED)
+
+from artifact_meta import write_artifact_meta  # noqa: E402
+
 QUALITY_GATE = os.path.join(
     REPO,
     ".claude",
@@ -131,6 +137,50 @@ class QualityGateTests(unittest.TestCase):
         self.assertTrue(
             any(item["check"] == "Check 6A — Redline Mapping Report" for item in report["blocking_failures"])
         )
+
+    def test_stale_issue_registry_meta_fails_before_gate_checks(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            working = os.path.join(tempdir, "working")
+            deliverables = os.path.join(tempdir, "deliverables")
+            os.makedirs(working)
+            os.makedirs(deliverables)
+
+            issue_path = os.path.join(working, "issue-registry.json")
+            write_json(os.path.join(working, "review-manifest.json"), {"matter_id": "M-1", "round": 1})
+            write_json(issue_path, {"issues": []})
+            write_artifact_meta(issue_path, artifact_type="issue_registry")
+            write_json(
+                issue_path,
+                {
+                    "issues": [
+                        {"issue_id": "ISS-1", "dimension": 1, "severity": "Critical"},
+                    ]
+                },
+            )
+            write_json(
+                os.path.join(working, "review-scorecard.json"),
+                {
+                    "overall_average": 9.0,
+                    "overall_grade": "A",
+                    "release_recommendation": "Pass",
+                    "dimensions": {},
+                },
+            )
+            write_json(os.path.join(working, "verification-audit.json"), {"total_citations": 0, "citations": []})
+            write_minimal_docx(os.path.join(deliverables, "matter_redline_v1.docx"), comments=1)
+            write_minimal_docx(os.path.join(deliverables, "matter_clean_v1.docx"))
+            write_minimal_docx(os.path.join(deliverables, "review-cover-memo_v1.docx"), text="Pass")
+
+            output_path = os.path.join(working, "quality-gate-report.json")
+            with self.assertRaises(subprocess.CalledProcessError) as ctx:
+                subprocess.run(
+                    [sys.executable, QUALITY_GATE, working, deliverables, output_path],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+            output = (ctx.exception.stdout or "") + (ctx.exception.stderr or "")
+            self.assertIn("artifact_sha256 mismatch", output)
 
 
 if __name__ == "__main__":

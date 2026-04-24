@@ -24,7 +24,7 @@ _SHARED_SCRIPTS = os.path.abspath(
 if _SHARED_SCRIPTS not in sys.path:
     sys.path.insert(0, _SHARED_SCRIPTS)
 
-from artifact_meta import write_artifact_meta  # noqa: E402
+from artifact_meta import validate_artifacts, write_artifact_meta  # noqa: E402
 
 DIMENSION_KEYS = {
     1: "1_citation",
@@ -60,6 +60,25 @@ def load_json(path):
 def write_json(path, payload):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
+
+
+def fail_artifact_validation(errors):
+    print(
+        json.dumps(
+            {
+                "error": "Artifact validation failed",
+                "validation_errors": errors,
+            },
+            ensure_ascii=False,
+        )
+    )
+    sys.exit(1)
+
+
+def validate_input_artifacts(entries):
+    errors = validate_artifacts(entries, require_meta=False)
+    if errors:
+        fail_artifact_validation(errors)
 
 
 def severity_title(value):
@@ -431,6 +450,18 @@ def main():
 
     legacy_issue_registry = args.legacy_issue_registry
     legacy_scorecard_path = args.legacy_scorecard
+    input_artifacts = [
+        (os.path.join(working_dir, "verification-audit.json"), "verification_audit"),
+    ]
+    input_artifacts.extend(
+        (os.path.join(working_dir, f"dim{dimension}-findings.json"), None)
+        for dimension in range(2, 7)
+    )
+    if legacy_issue_registry:
+        input_artifacts.append((legacy_issue_registry, "issue_registry"))
+    if legacy_scorecard_path:
+        input_artifacts.append((legacy_scorecard_path, "review_scorecard"))
+    validate_input_artifacts(input_artifacts)
 
     issues = []
     legacy_registry_exists = bool(legacy_issue_registry and os.path.exists(legacy_issue_registry))
