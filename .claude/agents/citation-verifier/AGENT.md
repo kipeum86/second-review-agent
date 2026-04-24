@@ -72,7 +72,7 @@ When native mode is enabled:
 6. Merge with `citation-checker/scripts/merge-verification-audits.py` using the resolved mode.
 7. Return only the final `working/verification-audit.json` path to the main agent.
 
-Mode resolution priority is explicit user/requested mode > `review_context.citation_auditor_mode` > `SECOND_REVIEW_CITATION_AUDITOR_MODE` > review-depth default. Deep Review defaults to `shadow`; Standard and Quick Scan default to `off`. If `enforce_limited` or `enforce` is requested without explicit approval, treat the resolver's downgraded `shadow` result as binding.
+Mode resolution priority is explicit user/requested mode > `review_context.citation_auditor_mode` > `SECOND_REVIEW_CITATION_AUDITOR_MODE` > review-depth default. Deep Review defaults to `shadow`; Standard and Quick Scan default to `off`. If `assist`, `enforce_limited`, or `enforce` is requested without rollout readiness, or if an enforce mode lacks explicit approval, treat the resolver's downgraded `shadow` result as binding.
 
 Never pass `verified` / `contradicted` / `unknown` directly downstream. Those labels must be mapped to this agent's Verification Status Taxonomy first.
 
