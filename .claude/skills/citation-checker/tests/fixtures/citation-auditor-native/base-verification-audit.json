@@ -6,7 +6,8 @@
     "issue": 1,
     "unverifiable": 5,
     "by_sub_status": {
-      "Unverifiable_No_Evidence": 5,
+      "Unverifiable_No_Evidence": 4,
+      "Unverifiable_Secondary_Only": 1,
       "Verified": 5,
       "Unsupported_Proposition": 1
     }
@@ -86,7 +87,7 @@
       "location": {"paragraph_index": 6},
       "claimed_content": "The 2023 market grew by 15%.",
       "verification_method": "base_verifier",
-      "verification_status": "Unverifiable_No_Evidence",
+      "verification_status": "Unverifiable_Secondary_Only",
       "evidence": {"url": null, "search_query": "2023 market grew 15%", "excerpt": "자료 확인 필요"},
       "confidence": "low",
       "notes": ""
