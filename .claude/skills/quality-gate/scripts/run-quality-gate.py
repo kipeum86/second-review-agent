@@ -11,8 +11,17 @@ import glob
 import json
 import os
 import re
+import sys
 import zipfile
 import xml.etree.ElementTree as ET
+
+_SHARED_SCRIPTS = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "_shared", "scripts")
+)
+if _SHARED_SCRIPTS not in sys.path:
+    sys.path.insert(0, _SHARED_SCRIPTS)
+
+from artifact_meta import write_artifact_meta  # noqa: E402
 
 VALID_RELEASES = {
     "Pass",
@@ -325,6 +334,11 @@ def main():
 
     os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
     write_json(args.output_path, report)
+    write_artifact_meta(
+        args.output_path,
+        artifact_type="quality_gate_report",
+        producer={"step": "WF1_STEP_8", "skill": "quality-gate", "script": "run-quality-gate.py"},
+    )
     print(json.dumps({"output_path": args.output_path, "overall_gate": overall}, ensure_ascii=False))
 
 

@@ -26,6 +26,7 @@ if _SHARED_SCRIPTS not in sys.path:
     sys.path.insert(0, _SHARED_SCRIPTS)
 
 from sanitize_fetch import sanitize_evidence  # noqa: E402
+from artifact_meta import write_artifact_meta  # noqa: E402
 
 VALID_STATUSES = {
     "Verified",
@@ -331,6 +332,11 @@ def main():
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(audit, f, indent=2, ensure_ascii=False)
+    write_artifact_meta(
+        output_path,
+        artifact_type="verification_audit",
+        producer={"step": "WF1_STEP_3", "skill": "citation-checker", "script": "build-audit-trail.py"},
+    )
 
     result = {
         "success": len(audit["validation_errors"]) == 0,
