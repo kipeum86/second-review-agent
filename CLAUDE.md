@@ -46,11 +46,15 @@ WF1 native integration is **Step 3 only** and keeps the existing DOCX pipeline. 
 - DOCX input still uses native DOCX parsing and DOCX redline output. Do not round-trip DOCX through markdown renderer output.
 - `working/verification-audit.json` remains canonical.
 - Optional native artifacts: `working/verification-audit.base.json`, `working/citation-auditor-shadow.json`, `working/citation-auditor-adapted.json`, `working/citation-auditor-diff.json`.
-- Supported native modes: `off`, `shadow`, `diff`, `assist`, `enforce_limited`, `enforce`. Default is `off`; initial rollout should use `shadow` or `assist` only, Deep Review first.
+- Supported native modes: `off`, `standalone_only`, `shadow`, `diff`, `assist`, `enforce_limited`, `enforce`.
+- Resolve the effective WF1 mode with `.claude/skills/citation-checker/scripts/resolve-citation-auditor-mode.py` before Step 3. Priority: explicit user/requested mode > `review_context.citation_auditor_mode` > `SECOND_REVIEW_CITATION_AUDITOR_MODE` > review-depth default.
+- Review-depth default: Deep Review uses `shadow`; Standard/Quick Scan use `off`.
+- Per-review manifest fields: `review_context.citation_auditor_mode`, optional `review_context.citation_auditor_reason`, and `review_context.citation_auditor_enforce_approved` for `enforce_limited`/`enforce`. Without explicit approval, enforce modes must fail closed to `shadow`.
 - `wikipedia` and `general-web` verifiers are not dispositive legal authority. Treat them as corroboration or low-trust fallback only.
 - `Nonexistent` still requires positive evidence of non-existence; uncertainty maps to `Unverifiable_No_Evidence`.
 
 **Implementation hooks**:
+- Resolve mode with `.claude/skills/citation-checker/scripts/resolve-citation-auditor-mode.py`.
 - Adapt auditor results with `.claude/skills/citation-checker/scripts/adapt-citation-auditor.py`.
 - Merge adapted results with `.claude/skills/citation-checker/scripts/merge-verification-audits.py`.
 - See `_private/citation-auditor-native-integration-plan.md` for rollout and acceptance criteria.
