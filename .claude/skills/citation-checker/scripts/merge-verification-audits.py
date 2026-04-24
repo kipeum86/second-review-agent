@@ -23,8 +23,17 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from copy import deepcopy
 from datetime import datetime, timezone
+
+_SHARED_SCRIPTS = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "_shared", "scripts")
+)
+if _SHARED_SCRIPTS not in sys.path:
+    sys.path.insert(0, _SHARED_SCRIPTS)
+
+from artifact_meta import write_artifact_meta  # noqa: E402
 
 
 VALID_MODES = {"shadow", "diff", "assist", "enforce_limited", "enforce"}
@@ -403,8 +412,18 @@ def main() -> int:
     args = parse_args()
     output, diff = merge(load_json(args.base), load_json(args.auditor), args.mode)
     write_json(args.output, output)
+    write_artifact_meta(
+        args.output,
+        artifact_type="verification_audit",
+        producer={"step": "WF1_STEP_3", "skill": "citation-checker", "script": "merge-verification-audits.py", "mode": args.mode},
+    )
     if args.diff_output:
         write_json(args.diff_output, diff)
+        write_artifact_meta(
+            args.diff_output,
+            artifact_type="citation_auditor_diff",
+            producer={"step": "WF1_STEP_3", "skill": "citation-checker", "script": "merge-verification-audits.py", "mode": args.mode},
+        )
     print(
         json.dumps(
             {

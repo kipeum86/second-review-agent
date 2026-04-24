@@ -25,6 +25,14 @@ import xml.etree.ElementTree as ET
 from copy import deepcopy
 from datetime import datetime, timezone
 
+_SHARED_SCRIPTS = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "_shared", "scripts")
+)
+if _SHARED_SCRIPTS not in sys.path:
+    sys.path.insert(0, _SHARED_SCRIPTS)
+
+from artifact_meta import write_artifact_meta  # noqa: E402
+
 # --- OOXML Namespaces ---
 NAMESPACES = {
     "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
@@ -799,6 +807,11 @@ def write_mapping_report(path, report):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
+    write_artifact_meta(
+        path,
+        artifact_type="redline_mapping_report",
+        producer={"step": "WF1_STEP_7", "skill": "redline-generator", "script": "add-docx-comments.py"},
+    )
 
 
 def prepare_issue_mappings(issues, redline_paragraphs):

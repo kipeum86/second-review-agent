@@ -30,6 +30,7 @@ if _SHARED_SCRIPTS not in sys.path:
     sys.path.insert(0, _SHARED_SCRIPTS)
 
 from sanitize_fetch import sanitize_evidence  # noqa: E402
+from artifact_meta import write_artifact_meta  # noqa: E402
 
 
 PRIMARY_VERIFIERS = {"korean-law", "us-law", "eu-law", "uk-law"}
@@ -527,6 +528,11 @@ def main() -> int:
     auditor_payload = load_json(args.auditor_results)
     output = adapt(citation_payload, auditor_payload, review_depth_override=args.review_depth)
     write_json(args.output, output)
+    write_artifact_meta(
+        args.output,
+        artifact_type="citation_auditor_adapted",
+        producer={"step": "WF1_STEP_3", "skill": "citation-checker", "script": "adapt-citation-auditor.py"},
+    )
     print(
         json.dumps(
             {

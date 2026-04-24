@@ -16,6 +16,15 @@ import argparse
 import json
 import os
 import re
+import sys
+
+_SHARED_SCRIPTS = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "_shared", "scripts")
+)
+if _SHARED_SCRIPTS not in sys.path:
+    sys.path.insert(0, _SHARED_SCRIPTS)
+
+from artifact_meta import write_artifact_meta  # noqa: E402
 
 DIMENSION_KEYS = {
     1: "1_citation",
@@ -447,8 +456,20 @@ def main():
     if legacy_scorecard and legacy_scorecard.get("known_issues_matched"):
         review_scorecard["known_issues_matched"] = legacy_scorecard["known_issues_matched"]
 
-    write_json(os.path.join(working_dir, "issue-registry.json"), issue_registry)
-    write_json(os.path.join(working_dir, "review-scorecard.json"), review_scorecard)
+    issue_registry_path = os.path.join(working_dir, "issue-registry.json")
+    scorecard_path = os.path.join(working_dir, "review-scorecard.json")
+    write_json(issue_registry_path, issue_registry)
+    write_artifact_meta(
+        issue_registry_path,
+        artifact_type="issue_registry",
+        producer={"step": "WF1_STEP_6", "skill": "scoring-engine", "script": "assemble-review-output.py"},
+    )
+    write_json(scorecard_path, review_scorecard)
+    write_artifact_meta(
+        scorecard_path,
+        artifact_type="review_scorecard",
+        producer={"step": "WF1_STEP_6", "skill": "scoring-engine", "script": "assemble-review-output.py"},
+    )
     print(
         json.dumps(
             {

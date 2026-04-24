@@ -11,6 +11,14 @@ import json
 import re
 import sys
 
+_SHARED_SCRIPTS = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "_shared", "scripts")
+)
+if _SHARED_SCRIPTS not in sys.path:
+    sys.path.insert(0, _SHARED_SCRIPTS)
+
+from artifact_meta import write_artifact_meta  # noqa: E402
+
 # ── Korean Citation Patterns ──
 
 # 법률 제NNNNN호 (Korean statutes by law number)
@@ -337,11 +345,23 @@ def main():
         os.makedirs(output_dir, exist_ok=True)
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
+    write_artifact_meta(
+        output_path,
+        artifact_type='citation_list',
+        producer={'step': 'WF1_STEP_2', 'skill': 'document-parser', 'script': 'extract-citations.py'},
+        source_file=parsed_structure.get('source_file'),
+    )
 
     if output_dir and os.path.basename(output_path) != 'citation-occurrences.json':
         occurrence_path = os.path.join(output_dir, 'citation-occurrences.json')
         with open(occurrence_path, 'w', encoding='utf-8') as f:
             json.dump({**output, 'artifact_type': 'citation_occurrences'}, f, indent=2, ensure_ascii=False)
+        write_artifact_meta(
+            occurrence_path,
+            artifact_type='citation_occurrences',
+            producer={'step': 'WF1_STEP_2', 'skill': 'document-parser', 'script': 'extract-citations.py'},
+            source_file=parsed_structure.get('source_file'),
+        )
 
     # Print summary to stdout
     result = {
