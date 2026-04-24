@@ -38,6 +38,12 @@ Citation verification strategy, search execution, and audit trail assembly for t
    - In `enforce_limited`, only deterministic primary-source existence/pinpoint scopes can change status
    - Usage: `python3 merge-verification-audits.py --base <base.json> --auditor <adapted.json> --mode assist --output <verification-audit.json> --diff-output <diff.json>`
 
+6. **Shadow Diff Review Worksheet** (`scripts/prepare-shadow-diff-review.py`)
+   - Converts `citation-auditor-diff.json` into `shadow-diff-review.json` for human rollout review
+   - Adds per-citation recommended review actions and blank human-review fields
+   - Keeps rollout gates conservative: generated worksheets are `pending_human_review` and never mark assist/enforce readiness automatically
+   - Usage: `python3 prepare-shadow-diff-review.py --diff working/citation-auditor-diff.json --manifest working/review-manifest.json --output working/shadow-diff-review.json`
+
 ## Verification Workflow per Citation
 
 ```
@@ -121,6 +127,7 @@ working/citation-list.json
 - `wikipedia` and `general-web` are low-trust corroboration and must not supply dispositive legal authority.
 - Do not use the citation-auditor markdown renderer for DOCX review output.
 - Do not downgrade an existing Critical base finding to `Verified` solely because citation-auditor returned `verified`.
+- Before enabling `assist` or `enforce_limited` for real use, create and review `shadow-diff-review.json` for real matters. Do not treat generated worksheets as human-reviewed until `rollout_gate_observations.human_reviewed=true` is set by a reviewer.
 
 ## Source Authority Classification
 
