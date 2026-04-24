@@ -98,8 +98,19 @@ def extract_docx_text(path):
     return " ".join(re.findall(r"<w:t[^>]*>(.*?)</w:t>", xml_text))
 
 
+def add_check(checks, name, passed, detail, blocking=False):
+    checks.append(
+        {
+            "check": name,
+            "status": "PASS" if passed else "FAIL",
+            "detail": detail,
+            "blocking": bool(blocking),
+        }
+    )
+
+
 def compute_release_recommendation(issues, grade):
-    critical_dim_1_3 = [issue for issue in issues if issue["dimension"] in (1, 2, 3) and severity_title(issue.get("severity")) == "Critical"]
+    critical_dim_1_3 = [issue for issue in issues if issue.get("dimension") in (1, 2, 3) and severity_title(issue.get("severity")) == "Critical"]
     nonexistent = [
         issue
         for issue in issues
@@ -148,6 +159,11 @@ def main():
     memo_text = extract_docx_text(memo_path)
 
     checks = []
+    critical_major_issues = [
+        issue
+        for issue in issues
+        if severity_title(issue.get("severity")) in {"Critical", "Major"}
+    ]
 
     tracked_change_total = redline_counts["insertions"] + redline_counts["deletions"]
     if tracked_change_total:
@@ -156,25 +172,36 @@ def main():
     else:
         check1_pass = redline_counts["comments"] >= len(issues)
         detail1 = f"Comments {redline_counts['comments']} vs issues {len(issues)}."
-    checks.append({"check": "Check 1 — Redline Completeness", "status": "PASS" if check1_pass else "FAIL", "detail": detail1})
+    add_check(checks, "Check 1 — Redline Completeness", check1_pass, detail1)
+
+    critical_major_coverage_pass = redline_counts["comments"] >= len(critical_major_issues)
+    add_check(
+        checks,
+        "Check 1A — Critical/Major Redline Coverage",
+        critical_major_coverage_pass,
+        (
+            f"Comments {redline_counts['comments']} vs Critical/Major issues {len(critical_major_issues)}."
+            if critical_major_coverage_pass
+            else f"Only {redline_counts['comments']} comments found for {len(critical_major_issues)} Critical/Major issues."
+        ),
+        blocking=True,
+    )
 
     comment_integrity_pass = redline_counts["comments"] > 0 if issues else True
-    checks.append(
-        {
-            "check": "Check 2 — Review Comment Integrity",
-            "status": "PASS" if comment_integrity_pass else "FAIL",
-            "detail": "Comment file present and attached to redline output." if comment_integrity_pass else "No comments found in redline DOCX.",
-        }
+    add_check(
+        checks,
+        "Check 2 — Review Comment Integrity",
+        comment_integrity_pass,
+        "Comment file present and attached to redline output." if comment_integrity_pass else "No comments found in redline DOCX.",
     )
 
     release_text = review_scorecard.get("release_recommendation", "")
     memo_pass = bool(memo_text) and release_text in memo_text
-    checks.append(
-        {
-            "check": "Check 3 — Cover Memo Accuracy",
-            "status": "PASS" if memo_pass else "FAIL",
-            "detail": "Cover memo contains the release recommendation and summary text." if memo_pass else "Cover memo missing or recommendation text not found.",
-        }
+    add_check(
+        checks,
+        "Check 3 — Cover Memo Accuracy",
+        memo_pass,
+        "Cover memo contains the release recommendation and summary text." if memo_pass else "Cover memo missing or recommendation text not found.",
     )
 
     average = review_scorecard.get("overall_average", 0.0)
@@ -184,12 +211,11 @@ def main():
         and review_scorecard.get("release_recommendation") in VALID_RELEASES
         and compute_grade(float(average)) == grade
     )
-    checks.append(
-        {
-            "check": "Check 4 — Scorecard Consistency",
-            "status": "PASS" if scorecard_pass else "FAIL",
-            "detail": "Grade/recommendation enums are valid and match the average." if scorecard_pass else "Scorecard grade or release recommendation is inconsistent.",
-        }
+    add_check(
+        checks,
+        "Check 4 — Scorecard Consistency",
+        scorecard_pass,
+        "Grade/recommendation enums are valid and match the average." if scorecard_pass else "Scorecard grade or release recommendation is inconsistent.",
     )
 
     audit_citations = verification_audit.get("citations", [])
@@ -207,38 +233,47 @@ def main():
         )
     else:
         detail5 = f"Audit cites {len(audit_citations)} entries; declared total is {total_citations}."
-    checks.append(
-        {
-            "check": "Check 5 — Audit Trail Completeness",
-            "status": "PASS" if citation_total_matches else "FAIL",
-            "detail": detail5,
-        }
+    add_check(
+        checks,
+        "Check 5 — Audit Trail Completeness",
+        citation_total_matches,
+        detail5,
     )
 
     clean_pass = clean_counts["comments"] == 0 and clean_counts["insertions"] == 0 and clean_counts["deletions"] == 0
-    checks.append(
-        {
-            "check": "Check 6 — Clean DOCX Correctness",
-            "status": "PASS" if clean_pass else "FAIL",
-            "detail": "Clean DOCX has no comments or tracked changes." if clean_pass else f"Clean DOCX still has markers: {clean_counts}.",
-        }
+    add_check(
+        checks,
+        "Check 6 — Clean DOCX Correctness",
+        clean_pass,
+        "Clean DOCX has no comments or tracked changes." if clean_pass else f"Clean DOCX still has markers: {clean_counts}.",
+        blocking=True,
     )
 
     expected_recommendation = compute_release_recommendation(issues, grade)
     release_pass = release_text == expected_recommendation
-    checks.append(
-        {
-            "check": "Check 7 — Release Recommendation Consistency",
-            "status": "PASS" if release_pass else "FAIL",
-            "detail": f"Expected {expected_recommendation}; scorecard has {release_text}.",
-        }
+    add_check(
+        checks,
+        "Check 7 — Release Recommendation Consistency",
+        release_pass,
+        f"Expected {expected_recommendation}; scorecard has {release_text}.",
     )
 
-    overall = "PASS" if all(check["status"] == "PASS" for check in checks) else "WARN"
+    blocking_failures = [
+        {"check": check["check"], "detail": check["detail"]}
+        for check in checks
+        if check["status"] == "FAIL" and check.get("blocking")
+    ]
+    if blocking_failures:
+        overall = "FAIL"
+    elif all(check["status"] == "PASS" for check in checks):
+        overall = "PASS"
+    else:
+        overall = "WARN"
     report = {
         "matter_id": manifest.get("matter_id"),
         "round": manifest.get("round"),
         "quality_gate_checks": checks,
+        "blocking_failures": blocking_failures,
         "overall_gate": overall,
         "artifacts_produced": sorted(
             [

@@ -29,6 +29,20 @@ def severity_title(value):
     return "Minor"
 
 
+def dedupe_recommendations(issues, limit=5):
+    seen = set()
+    recommendations = []
+    for issue in issues:
+        text = str(issue.get("recommendation") or "").strip()
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        recommendations.append(text)
+        if len(recommendations) >= limit:
+            break
+    return recommendations
+
+
 def build_sections(manifest, issue_registry, review_scorecard, verification_audit):
     language = manifest.get("document", {}).get("language", "ko")
     is_korean = str(language).lower().startswith("ko")
@@ -46,24 +60,56 @@ def build_sections(manifest, issue_registry, review_scorecard, verification_audi
     citation_count = verification_audit.get("total_citations", len(verification_audit.get("citations", [])))
 
     if is_korean:
-        overall_assessment = (
-            f"○ 구조와 분석 밀도는 충분합니다. 다만 인용 검증과 핵심 날짜·조문 정합성에서 "
-            f"즉시 수정이 필요한 이슈가 확인되었습니다. 총 {len(issues)}건, 인용 검증 대상 {citation_count}건을 기준으로 보면 "
-            f"현재 버전은 내부 점검 기준 일부는 충족했더라도 외부 공유 기준에는 아직 못 미칩니다."
-        )
+        if not issues:
+            overall_assessment = (
+                f"○ 이번 검토에서 등록된 이슈는 없습니다. 인용 검증 대상 {citation_count}건 기준으로도 "
+                "별도 수정 권고 없이 현재 scorecard의 릴리스 권고를 따를 수 있습니다."
+            )
+        elif critical:
+            overall_assessment = (
+                f"○ 총 {len(issues)}건의 이슈 중 Critical {len(critical)}건이 확인되었습니다. "
+                "현재 버전은 해당 항목 수정 전 외부 공유를 보류하는 것이 안전합니다."
+            )
+        elif major:
+            overall_assessment = (
+                f"○ 총 {len(issues)}건의 이슈 중 Major {len(major)}건이 확인되었습니다. "
+                "문서의 기본 구조는 유지 가능하나, 표시된 주요 항목은 릴리스 전 정리하는 것이 좋습니다."
+            )
+        else:
+            overall_assessment = (
+                f"○ 총 {len(issues)}건의 Minor/Suggestion 항목이 확인되었습니다. "
+                "현재 scorecard상 릴리스를 막는 중대 이슈는 확인되지 않았습니다."
+            )
         style_text = "스타일 비교 데이터가 없으면 생략 가능하나, 이번 메모에서는 별도 스타일 프로파일 입력이 없어 비교를 수행하지 않았습니다."
         next_steps_intro = "우선순위는 다음과 같습니다."
+        no_next_steps = "현재 issue registry 기준 추가 수정 권고는 없습니다."
         no_critical = "Critical finding 없음"
         no_major = "Major finding 없음"
         no_recurring = "반복 패턴 없음"
     else:
-        overall_assessment = (
-            f"Structure and analytical coverage are solid. However, citation verification and key factual details still require "
-            f"material correction before release. With {len(issues)} findings and {citation_count} citations reviewed, this draft is "
-            f"not yet at client-facing quality."
-        )
+        if not issues:
+            overall_assessment = (
+                f"No findings were registered in this review. With {citation_count} citations reviewed, "
+                "the document can follow the scorecard release recommendation without additional issue-driven revisions."
+            )
+        elif critical:
+            overall_assessment = (
+                f"{len(issues)} findings were registered, including {len(critical)} Critical finding(s). "
+                "Release should be held until those items are corrected."
+            )
+        elif major:
+            overall_assessment = (
+                f"{len(issues)} findings were registered, including {len(major)} Major finding(s). "
+                "The document should be revised before external release."
+            )
+        else:
+            overall_assessment = (
+                f"{len(issues)} Minor/Suggestion item(s) were registered. "
+                "No release-blocking issue appears in the issue registry."
+            )
         style_text = "Style fingerprint comparison was skipped because no style profile or sufficient comparison samples were provided."
         next_steps_intro = "Recommended priority order:"
+        no_next_steps = "No additional issue-driven revisions are recommended."
         no_critical = "No Critical findings."
         no_major = "No Major findings."
         no_recurring = "No recurring pattern matches."
@@ -74,6 +120,8 @@ def build_sections(manifest, issue_registry, review_scorecard, verification_audi
             f"para {location.get('paragraph_index')}" if "paragraph_index" in location else "general"
         )
         return f"{location_text}: {issue.get('description')} / {issue.get('recommendation')}"
+
+    recommendations = dedupe_recommendations(critical + major + minor)
 
     sections = {
         "language": language,
@@ -105,14 +153,7 @@ def build_sections(manifest, issue_registry, review_scorecard, verification_audi
         "style_heading": "스타일 비교" if is_korean else "Style Fingerprint Comparison",
         "style_text": style_text,
         "next_heading": "권장 다음 단계" if is_korean else "Recommended Next Steps",
-        "next_items": [
-            next_steps_intro,
-            *[
-                issue.get("recommendation")
-                for issue in (critical + major)[:5]
-                if issue.get("recommendation")
-            ],
-        ],
+        "next_items": [next_steps_intro, *recommendations] if recommendations else [no_next_steps],
     }
     return sections
 

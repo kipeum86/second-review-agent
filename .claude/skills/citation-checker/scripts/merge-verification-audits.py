@@ -181,12 +181,21 @@ def can_enforce_full(base: dict, auditor: dict) -> tuple[bool, str]:
 
 def apply_status(base: dict, auditor: dict, decision: str) -> None:
     prior_status = base.get("verification_status")
+    prior_evidence = deepcopy(base.get("evidence"))
+    auditor_evidence = deepcopy(auditor.get("evidence"))
     base["verification_status"] = auditor.get("verification_status")
     base["verification_method"] = merge_method(base.get("verification_method"), auditor.get("verification_method"))
     base["authority_tier"] = auditor.get("authority_tier", base.get("authority_tier"))
     base["authority_label"] = auditor.get("authority_label", base.get("authority_label"))
     base["authority_note"] = auditor.get("authority_note", base.get("authority_note"))
-    base["evidence"] = auditor.get("evidence", base.get("evidence"))
+    if prior_evidence:
+        base["evidence"] = prior_evidence
+        if auditor_evidence:
+            base["citation_auditor_evidence"] = auditor_evidence
+            base["status_evidence_source"] = "citation_auditor"
+    elif auditor_evidence:
+        base["evidence"] = auditor_evidence
+        base["status_evidence_source"] = "citation_auditor"
     base["confidence"] = auditor.get("confidence", base.get("confidence"))
     base["notes"] = auditor.get("notes", base.get("notes", ""))
     base.setdefault("merge_history", []).append(
@@ -195,6 +204,7 @@ def apply_status(base: dict, auditor: dict, decision: str) -> None:
             "decision": decision,
             "prior_status": prior_status,
             "new_status": auditor.get("verification_status"),
+            "base_evidence_preserved": prior_evidence is not None,
             "auditor": auditor.get("auditor", {}),
         }
     )

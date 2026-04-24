@@ -22,7 +22,6 @@ import re
 import sys
 from copy import deepcopy
 from datetime import datetime, timezone
-from urllib.parse import urlparse
 
 _SHARED_SCRIPTS = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "_shared", "scripts")
@@ -162,9 +161,18 @@ def build_record(container: dict, verdict: dict, claim: dict) -> dict:
     evidence = verdict.get("evidence") or container.get("evidence") or []
     if isinstance(evidence, dict):
         evidence = [evidence]
+    source_excerpt = verdict.get("excerpt") or verdict.get("source_excerpt") or container.get("excerpt") or container.get("source_excerpt")
+    search_query = verdict.get("search_query") or container.get("search_query")
+    search_actions = verdict.get("search_actions") or container.get("search_actions") or []
+    if isinstance(search_actions, dict):
+        search_actions = [search_actions]
     for item in evidence:
         if isinstance(item, dict) and item.get("url"):
             supporting_urls.append(item["url"])
+        if isinstance(item, dict) and not source_excerpt:
+            source_excerpt = item.get("excerpt") or item.get("quote") or item.get("text")
+        if isinstance(item, dict) and not search_query:
+            search_query = item.get("search_query") or item.get("query")
 
     return {
         "citation_id": container.get("citation_id") or verdict.get("citation_id"),
@@ -179,6 +187,16 @@ def build_record(container: dict, verdict: dict, claim: dict) -> dict:
         "reason_confidence": verdict.get("reason_confidence") or container.get("reason_confidence"),
         "source_scope": verdict.get("source_scope") or container.get("source_scope"),
         "enforceable": verdict.get("enforceable", container.get("enforceable")),
+        "positive_nonexistence_evidence": verdict.get(
+            "positive_nonexistence_evidence",
+            container.get("positive_nonexistence_evidence"),
+        ),
+        "searched_database": verdict.get("searched_database") or verdict.get("database") or container.get("searched_database") or container.get("database"),
+        "result_count": verdict.get("result_count", container.get("result_count")),
+        "negative_signal": verdict.get("negative_signal") or container.get("negative_signal"),
+        "search_actions": search_actions,
+        "source_excerpt": source_excerpt,
+        "search_query": search_query,
     }
 
 
@@ -253,19 +271,7 @@ def infer_reason_code(record: dict) -> tuple[str, str]:
         return "no_evidence", "inferred"
 
     if label == "contradicted":
-        if any(token in rationale for token in ("번역", "translation")):
-            return "translation_mismatch", "inferred"
-        if any(token in rationale for token in ("폐지", "개정", "superseded", "repealed", "amended", "stale")):
-            return "stale_or_superseded", "inferred"
-        if "jurisdiction" in rationale or "관할" in rationale:
-            return "wrong_jurisdiction", "inferred"
-        if any(token in rationale for token in ("항은 존재하지", "호는 존재하지", "조문은 확인되지만", "wrong pinpoint", "pinpoint", "article exists")):
-            return "wrong_pinpoint", "inferred"
-        if any(token in rationale for token in ("주장과 다", "support", "holding", "판시", "쟁점이 주장과")):
-            return "unsupported_proposition", "inferred"
-        if any(token in rationale for token in ("존재하지", "찾을 수 없습니다", "not found", "no match", "does not exist", "404")):
-            return "nonexistent_authority", "inferred"
-        return "no_evidence", "inferred"
+        return "no_evidence", "inferred_missing_reason_code"
 
     return "no_evidence", "inferred"
 
@@ -282,18 +288,47 @@ def status_for_record(record: dict, reason_code: str) -> str:
 def has_positive_nonexistence_evidence(record: dict) -> bool:
     if record.get("positive_nonexistence_evidence") is True:
         return True
-    rationale = normalize_space(record.get("rationale")).lower()
-    if record.get("supporting_urls"):
+    negative_signal = normalize_space(record.get("negative_signal")).lower()
+    database = normalize_space(record.get("searched_database")).lower()
+    result_count = record.get("result_count")
+    if database and negative_signal in {"no_match", "no_exact_match", "not_found", "zero_results"}:
         return True
-    return any(token in rationale for token in ("db", "database", "no match", "not found", "찾을 수 없습니다", "존재하지", "404"))
+    if database and result_count == 0:
+        return True
+    for action in record.get("search_actions", []):
+        if not isinstance(action, dict):
+            continue
+        action_db = normalize_space(action.get("database") or action.get("source")).lower()
+        action_signal = normalize_space(action.get("negative_signal")).lower()
+        action_count = action.get("result_count")
+        if action_db and action_signal in {"no_match", "no_exact_match", "not_found", "zero_results"}:
+            return True
+        if action_db and action_count == 0:
+            return True
+    rationale = normalize_space(record.get("rationale")).lower()
+    has_authoritative_search = any(
+        token in rationale
+        for token in (
+            "law.go.kr",
+            "court",
+            "scourt",
+            "database",
+            "registry",
+            "db",
+            "국가법령정보센터",
+            "종합법률정보",
+            "공식",
+        )
+    )
+    has_negative_signal = any(
+        token in rationale
+        for token in ("no match", "not found", "찾을 수 없습니다", "검색 결과 0", "결과가 없습니다", "존재하지")
+    )
+    return has_authoritative_search and has_negative_signal
 
 
 def authority_for_record(record: dict) -> tuple[int, str]:
     verifier = record.get("verifier_name")
-    tier = record.get("authority_tier")
-    label = record.get("authority_label")
-    if isinstance(tier, int) and tier in (1, 2, 3, 4):
-        return tier, label or authority_label(tier)
     return AUTHORITY_TIER_BY_VERIFIER.get(verifier, (4, "Tertiary / Low-Reliability"))
 
 
@@ -329,11 +364,12 @@ def build_evidence(record: dict, reason_code: str) -> dict:
 
     evidence = {
         "url": urls[0] if urls else None,
-        "search_query": None,
-        "excerpt": normalize_space(record.get("rationale")),
+        "search_query": record.get("search_query"),
+        "excerpt": normalize_space(record.get("source_excerpt")),
         "auditor_verifier": record.get("verifier_name"),
         "auditor_label": record.get("label"),
         "auditor_reason_code": reason_code,
+        "auditor_rationale": normalize_space(record.get("rationale")),
     }
     if references:
         evidence["source_reference"] = "; ".join(references)
@@ -404,7 +440,7 @@ def adapt_record(record: dict, citation: dict, match_score: int, unmatched_index
         "authority_tier": tier,
         "authority_label": tier_label,
         "authority_note": f"Adapted from citation-auditor verifier `{record.get('verifier_name')}`.",
-        "supports_conclusion": citation.get("supports_conclusion", True),
+        "supports_conclusion": bool(citation.get("supports_conclusion", False)),
         "conclusion_location": citation.get("conclusion_location") or citation.get("location") or {},
         "evidence": evidence,
         "confidence": "high" if reason_confidence == "explicit" and record.get("label") != "unknown" else "medium",
