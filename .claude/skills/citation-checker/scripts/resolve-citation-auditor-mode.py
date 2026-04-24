@@ -25,6 +25,15 @@ def load_json(path: str) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
+def load_optional_json(path: str | None) -> dict[str, Any]:
+    if not path:
+        return {}
+    try:
+        return load_json(path)
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"_load_error": f"{path}: {exc}"}
+
+
 def normalize_mode(value: object) -> str | None:
     if value is None:
         return None
@@ -64,6 +73,31 @@ def manifest_enforce_approved(manifest: dict[str, Any]) -> bool:
     )
 
 
+def rollout_gate_summary(rollout_report: dict[str, Any]) -> dict[str, Any]:
+    load_error = rollout_report.get("_load_error")
+    if load_error:
+        return {
+            "available": False,
+            "recommendation": None,
+            "assist_ready": False,
+            "enforce_limited_ready": False,
+            "error": load_error,
+        }
+    if not rollout_report:
+        return {
+            "available": False,
+            "recommendation": None,
+            "assist_ready": False,
+            "enforce_limited_ready": False,
+        }
+    return {
+        "available": True,
+        "recommendation": rollout_report.get("recommendation"),
+        "assist_ready": rollout_report.get("assist_ready") is True,
+        "enforce_limited_ready": rollout_report.get("enforce_limited_ready") is True,
+    }
+
+
 def validate_mode(mode: str | None, source: str) -> list[str]:
     if mode and mode not in VALID_MODES:
         return [f"invalid {source} citation_auditor_mode: {mode}"]
@@ -76,6 +110,7 @@ def resolve_mode(
     requested_mode: str | None = None,
     env_mode: str | None = None,
     allow_enforce: bool = False,
+    rollout_report: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     requested = normalize_mode(requested_mode)
     manifest_value = manifest_mode(manifest)
@@ -107,11 +142,32 @@ def resolve_mode(
         source = "default"
 
     approved = allow_enforce or manifest_enforce_approved(manifest)
+    rollout_gate = rollout_gate_summary(rollout_report or {})
     if mode in ENFORCE_MODES and not approved:
         warnings.append(
             {
                 "code": "enforce_requires_approval",
                 "message": f"{mode} requires explicit approval; using shadow instead.",
+                "requested_mode": mode,
+            }
+        )
+        mode = "shadow"
+
+    if mode == "assist" and not rollout_gate["assist_ready"]:
+        warnings.append(
+            {
+                "code": "assist_requires_rollout_readiness",
+                "message": "assist requires a rollout report with assist_ready=true; using shadow instead.",
+                "requested_mode": mode,
+            }
+        )
+        mode = "shadow"
+
+    if mode in ENFORCE_MODES and not rollout_gate["enforce_limited_ready"]:
+        warnings.append(
+            {
+                "code": "enforce_requires_rollout_readiness",
+                "message": f"{mode} requires a rollout report with enforce_limited_ready=true; using shadow instead.",
                 "requested_mode": mode,
             }
         )
@@ -126,6 +182,7 @@ def resolve_mode(
         "manifest_mode": manifest_value,
         "env_mode": env_value,
         "enforce_approved": approved,
+        "rollout_gate": rollout_gate,
         "optional_artifacts": OPTIONAL_ARTIFACTS if mode not in {"off", "standalone_only"} else [],
         "warnings": warnings,
     }
@@ -137,6 +194,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--requested-mode")
     parser.add_argument("--env-mode", default=os.environ.get("SECOND_REVIEW_CITATION_AUDITOR_MODE"))
     parser.add_argument("--allow-enforce", action="store_true")
+    parser.add_argument("--rollout-report")
     return parser.parse_args()
 
 
@@ -147,6 +205,7 @@ def main() -> int:
         requested_mode=args.requested_mode,
         env_mode=args.env_mode,
         allow_enforce=args.allow_enforce,
+        rollout_report=load_optional_json(args.rollout_report),
     )
     print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0 if result.get("success") else 2

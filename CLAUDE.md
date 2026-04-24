@@ -50,6 +50,7 @@ WF1 native integration is **Step 3 only** and keeps the existing DOCX pipeline. 
 - Resolve the effective WF1 mode with `.claude/skills/citation-checker/scripts/resolve-citation-auditor-mode.py` before Step 3. Priority: explicit user/requested mode > `review_context.citation_auditor_mode` > `SECOND_REVIEW_CITATION_AUDITOR_MODE` > review-depth default.
 - Review-depth default: Deep Review uses `shadow`; Standard/Quick Scan use `off`.
 - Per-review manifest fields: `review_context.citation_auditor_mode`, optional `review_context.citation_auditor_reason`, and `review_context.citation_auditor_enforce_approved` for `enforce_limited`/`enforce`. Without explicit approval, enforce modes must fail closed to `shadow`.
+- `assist` and `enforce_limited` also require a reviewed rollout report from `evaluate-shadow-diff-rollout.py`; pass it to the resolver with `--rollout-report`. Without readiness, the resolver must fail closed to `shadow`.
 - `wikipedia` and `general-web` verifiers are not dispositive legal authority. Treat them as corroboration or low-trust fallback only.
 - `Nonexistent` still requires positive evidence of non-existence; uncertainty maps to `Unverifiable_No_Evidence`.
 

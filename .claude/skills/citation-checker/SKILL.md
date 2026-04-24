@@ -22,6 +22,7 @@ Citation verification strategy, search execution, and audit trail assembly for t
    - Resolves the effective native citation-auditor mode from user/requested mode, `review-manifest.json`, environment, and review depth
    - Defaults Deep Review to `shadow`; Standard/Quick Scan to `off`
    - Requires explicit approval for `enforce_limited` and `enforce`; otherwise downgrades to `shadow`
+   - Requires a reviewed rollout report before honoring `assist`, `enforce_limited`, or `enforce`
    - Usage: `python3 resolve-citation-auditor-mode.py --manifest working/review-manifest.json`
 
 4. **Citation Auditor Adapter** (`scripts/adapt-citation-auditor.py`)
@@ -96,7 +97,15 @@ python3 .claude/skills/citation-checker/scripts/resolve-citation-auditor-mode.py
   --manifest working/review-manifest.json
 ```
 
-Priority order: explicit requested mode > `review_context.citation_auditor_mode` > `SECOND_REVIEW_CITATION_AUDITOR_MODE` > review-depth default. Review-depth default is `shadow` for Deep Review and `off` for Standard/Quick Scan. `enforce_limited` and `enforce` require `review_context.citation_auditor_enforce_approved=true` or an explicit `--allow-enforce`; otherwise the resolver returns `shadow` with a warning.
+When requesting `assist` or an enforce mode, include the reviewed rollout report:
+
+```bash
+python3 .claude/skills/citation-checker/scripts/resolve-citation-auditor-mode.py \
+  --manifest working/review-manifest.json \
+  --rollout-report working/shadow-diff-rollout-report.json
+```
+
+Priority order: explicit requested mode > `review_context.citation_auditor_mode` > `SECOND_REVIEW_CITATION_AUDITOR_MODE` > review-depth default. Review-depth default is `shadow` for Deep Review and `off` for Standard/Quick Scan. `assist` requires `assist_ready=true` in a rollout report; `enforce_limited` and `enforce` require `review_context.citation_auditor_enforce_approved=true` or an explicit `--allow-enforce` plus `enforce_limited_ready=true` in a rollout report. Otherwise the resolver returns `shadow` with a warning.
 
 Manifest override example:
 
