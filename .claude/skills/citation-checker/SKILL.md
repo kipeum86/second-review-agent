@@ -18,6 +18,20 @@ Citation verification strategy, search execution, and audit trail assembly for t
    - Query construction templates for each legal database
    - Reference only — actual MCP calls are made by the LLM directly
 
+3. **Citation Auditor Adapter** (`scripts/adapt-citation-auditor.py`)
+   - Converts citation-auditor verifier output (`verified` / `contradicted` / `unknown`) into this repo's canonical verification statuses
+   - Preserves `citation_id`, `location`, and `claimed_content` from `citation-list.json`
+   - Adds `auditor.reason_code`, `auditor.enforce_scope`, and `auditor.enforceable` metadata
+   - Keeps bare `contradicted` verdicts conservative: no Critical status without a reason code or high-confidence rationale
+   - Usage: `python3 adapt-citation-auditor.py --citation-list <citation-list.json> --auditor-results <shadow.json> --output <adapted.json>`
+
+4. **Verification Audit Merge** (`scripts/merge-verification-audits.py`)
+   - Merges the existing `citation-verifier` output with adapted citation-auditor results
+   - Supports `shadow`, `diff`, `assist`, `enforce_limited`, and `enforce`
+   - In `assist`, base statuses remain unchanged and auditor evidence is attached only as `supplemental_verifiers`
+   - In `enforce_limited`, only deterministic primary-source existence/pinpoint scopes can change status
+   - Usage: `python3 merge-verification-audits.py --base <base.json> --auditor <adapted.json> --mode assist --output <verification-audit.json> --diff-output <diff.json>`
+
 ## Verification Workflow per Citation
 
 ```
@@ -41,6 +55,44 @@ Citation from citation-list.json
     │
     └── Record in audit trail (include authority_tier)
 ```
+
+## Native citation-auditor Integration
+
+The citation-auditor verifier pool can be used as an optional backend inside WF1 Step 3, but it does **not** replace this skill's canonical schema.
+
+### Modes
+
+| Mode | Behavior |
+|---|---|
+| `off` | Existing citation-verifier only |
+| `shadow` | Run auditor verifier pool and write adapted/diff artifacts; canonical `verification-audit.json` remains base |
+| `diff` | Same as shadow, with diff report emphasized for review |
+| `assist` | Keep base statuses; attach auditor evidence to base `Unverifiable_*` entries as `supplemental_verifiers` |
+| `enforce_limited` | Permit deterministic primary-source checks to update status |
+| `enforce` | Conservative full merge; only after fixture and real-matter regression review |
+
+### Native artifact flow
+
+```
+working/citation-list.json
+    ├── existing citation-verifier
+    │     └── working/verification-audit.base.json
+    └── citation-auditor verifier pool
+          └── working/citation-auditor-shadow.json
+                └── adapt-citation-auditor.py
+                      └── working/citation-auditor-adapted.json
+                            └── merge-verification-audits.py
+                                  ├── working/verification-audit.json
+                                  └── working/citation-auditor-diff.json
+```
+
+### Merge guardrails
+
+- `working/verification-audit.json` remains the only canonical Step 3 output.
+- `Nonexistent` requires positive evidence; otherwise map to `Unverifiable_No_Evidence`.
+- `wikipedia` and `general-web` are low-trust corroboration and must not supply dispositive legal authority.
+- Do not use the citation-auditor markdown renderer for DOCX review output.
+- Do not downgrade an existing Critical base finding to `Verified` solely because citation-auditor returned `verified`.
 
 ## Source Authority Classification
 

@@ -31,8 +31,29 @@ You are the Senior Review Specialist — the final quality gate before any docum
 | `/rereview` | WF3 — Re-review | "re-review", "재검토", "수정본", revised document submitted |
 | `/library` | WF4 — Library Management | "library", "라이브러리", "add-sample", "add-checklist", "known-issues", "style-profile" |
 | `/ingest` | WF5 — Source Ingest | "ingest", "소스 추가", "자료 넣었어", "inbox", "파일 올렸", "파일 넣었" |
+| `/audit` | Standalone — Post-Hoc Citation Audit | "audit", "인용 감사", "citation audit", markdown file path provided |
 
 **Pipeline resume**: Before starting any pipeline, check for `checkpoint.json` in `$SECOND_REVIEW_PRIVATE_DIR/output/{matter_id}/`. If found with `last_completed_step < final_step`, ask: "이전 검토가 Step {N}에서 중단되었습니다. Step {N+1}부터 재개할까요?" Verify artifact existence before resuming — see Resume Protocol below.
+
+## Citation Auditor Integration
+
+`/audit <file.md>` — user-triggered, post-hoc citation verification for **markdown** files. Runs the `citation-auditor` skill (`.claude/skills/citation-auditor/SKILL.md`), chunks the file, routes factual/citation claims to verifier subagents under `.claude/skills/verifiers/`, and returns annotated markdown with inline badges and a per-claim audit report.
+
+WF1 native integration is **Step 3 only** and keeps the existing DOCX pipeline. The citation-auditor verifier pool may run as an optional backend for `citation-checker`, but its `verified` / `contradicted` / `unknown` verdicts must be adapted into the existing `verification-audit.json` taxonomy before any downstream step sees them.
+
+**Native mode guardrails**:
+- WF1 step count remains 8. Do not add a Step 9/10 citation audit.
+- DOCX input still uses native DOCX parsing and DOCX redline output. Do not round-trip DOCX through markdown renderer output.
+- `working/verification-audit.json` remains canonical.
+- Optional native artifacts: `working/verification-audit.base.json`, `working/citation-auditor-shadow.json`, `working/citation-auditor-adapted.json`, `working/citation-auditor-diff.json`.
+- Supported native modes: `off`, `shadow`, `diff`, `assist`, `enforce_limited`, `enforce`. Default is `off`; initial rollout should use `shadow` or `assist` only, Deep Review first.
+- `wikipedia` and `general-web` verifiers are not dispositive legal authority. Treat them as corroboration or low-trust fallback only.
+- `Nonexistent` still requires positive evidence of non-existence; uncertainty maps to `Unverifiable_No_Evidence`.
+
+**Implementation hooks**:
+- Adapt auditor results with `.claude/skills/citation-checker/scripts/adapt-citation-auditor.py`.
+- Merge adapted results with `.claude/skills/citation-checker/scripts/merge-verification-audits.py`.
+- See `_private/citation-auditor-native-integration-plan.md` for rollout and acceptance criteria.
 
 ## Sub-Agent Dispatch
 
@@ -193,7 +214,7 @@ Without context, Dimension 3 (Client Alignment) is explicitly skipped with reaso
 |------|----------|--------------------|
 | 1 | WF1 | `working/review-manifest.json` |
 | 2 | WF1 | `working/parsed-structure.json`, `working/citation-list.json`, `working/defined-terms.json` |
-| 3 | WF1 | `working/verification-audit.json` |
+| 3 | WF1 | `working/verification-audit.json` (optional native-auditor artifacts: `working/verification-audit.base.json`, `working/citation-auditor-shadow.json`, `working/citation-auditor-adapted.json`, `working/citation-auditor-diff.json`) |
 | 4 | WF1 | `working/dim{2,3,4,5}-findings.json` (Dim 3 may be absent if skipped) |
 | 5 | WF1 | `working/dim6-findings.json` |
 | 6 | WF1 | `working/issue-registry.json`, `working/review-scorecard.json` |

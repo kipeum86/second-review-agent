@@ -45,6 +45,30 @@ For each citation, apply **both** tracks when available:
 | **Standard** | Web search for statutes and case law supporting **dispositive conclusions**. Source-list for others. |
 | **Deep Review** | Web search for **all** citation types. Exhaustive verification. |
 
+## Optional citation-auditor Native Backend
+
+The citation-auditor verifier pool may be used as an optional Step 3 backend, but the canonical output remains `working/verification-audit.json` in the schema below.
+
+Supported modes:
+
+| Mode | Rule |
+|---|---|
+| `off` | Do not run citation-auditor. |
+| `shadow` / `diff` | Run citation-auditor separately, adapt its output, and write shadow/diff artifacts. Do not alter the canonical audit. |
+| `assist` | Attach citation-auditor evidence only to base `Unverifiable_*` entries as supplemental metadata. Do not change status. |
+| `enforce_limited` | Permit only deterministic primary-source existence/pinpoint changes, such as Korean statute article/paragraph checks. |
+| `enforce` | Reserved for later rollout after fixture and real-matter regression review. |
+
+When native mode is enabled:
+
+1. First produce the base verification result exactly as this agent normally would.
+2. Save that result as `working/verification-audit.base.json`.
+3. Adapt citation-auditor output with `citation-checker/scripts/adapt-citation-auditor.py`.
+4. Merge with `citation-checker/scripts/merge-verification-audits.py`.
+5. Return only the merged `working/verification-audit.json` path to the main agent.
+
+Never pass `verified` / `contradicted` / `unknown` directly downstream. Those labels must be mapped to this agent's Verification Status Taxonomy first.
+
 ## Priority Order
 
 Process citations in this order (highest hallucination risk first):
@@ -192,5 +216,6 @@ Write `working/verification-audit.json` with this structure:
 
 After verifying all citations:
 1. Run `build-audit-trail.py` to assemble and validate the final `verification-audit.json`
-2. Verify summary counts match individual entries
-3. Return the file path to the main agent
+2. If citation-auditor native mode is enabled, preserve the base result and merge adapted auditor results according to the selected mode before finalizing `verification-audit.json`
+3. Verify summary counts match individual entries
+4. Return the file path to the main agent
