@@ -10,9 +10,10 @@ Apply margin comments and tracked changes to DOCX for review output generation u
    - Insert tracked changes (`<w:del>` + `<w:ins>`) for Critical/Major findings when the recommendation exposes an explicit textual correction (arrow replacement or typo list)
    - Comment prefixes are citation-aware when `verification-audit.json` is provided
    - Paragraph mapping: paragraph_index → regex parse → keyword search → correction-text search → unmapped collection
-   - Usage: `python3 add-docx-comments.py <input_docx> <issue_registry_json> <output_redline_docx> [--clean-output <output_clean_docx>] [--verification-audit <verification_audit_json>] [--fallback-markdown <fallback_md_path>]`
+   - Usage: `python3 add-docx-comments.py <input_docx> <issue_registry_json> <output_redline_docx> [--clean-output <output_clean_docx>] [--verification-audit <verification_audit_json>] [--fallback-markdown <fallback_md_path>] [--mapping-report <redline_mapping_report_json>]`
    - Output: annotated DOCX with comments attached to relevant paragraphs
    - Unmapped issues collected in a final comment at document end
+   - Writes `redline-mapping-report.json` next to `issue-registry.json` by default, unless `--mapping-report` is provided
    - Stdlib only (zipfile + xml.etree.ElementTree) — no python-docx dependency
 
 1. **Clean DOCX Generation**
@@ -35,11 +36,12 @@ Original DOCX (in `$SECOND_REVIEW_PRIVATE_DIR/input/`)
     ├── Copy to working/ (PRESERVE ORIGINAL)
     │
     ├── Redline Generation (CURRENT)
-    │   ├── Run add-docx-comments.py <input> <issue-registry> <redline> --clean-output <clean>
+    │   ├── Run add-docx-comments.py <input> <issue-registry> <redline> --clean-output <clean> --mapping-report <report>
     │   ├── Maps issues to paragraphs (index → regex → keyword search)
     │   ├── Inserts <w:comment> + range markers for each issue
     │   ├── Inserts tracked changes for explicit textual corrections
     │   ├── Creates/updates comments.xml, rels, content types
+    │   ├── Writes working/redline-mapping-report.json
     │   └── Output: {doc}_redline_v{N}.docx (with margin comments)
     │
     └── Clean DOCX: accept Critical/Major corrections → {doc}_clean_v{N}.docx
@@ -111,11 +113,18 @@ For each issue in issue-registry.json, apply these strategies in order:
 3. **Fallback 2**: Keyword search — extract keywords from issue description, find paragraph with highest keyword overlap in `<w:t>` text content
 4. **Fallback 3**: Unmapped — collect all unmapped issues in a single comment attached to the last paragraph
 
-Target: ≥90% mapping success rate. Script outputs JSON summary with mapping statistics.
+The script writes `redline-mapping-report.json` with per-issue mapping status:
+
+- `exact`: paragraph plus character span, anchor text, or text correction match
+- `paragraph`: paragraph index/reference match, but no exact anchor text
+- `fallback`: keyword search match
+- `unmapped`: no usable location found
+
+Target: ≥90% Critical/Major exact mapping rate for Deep Review. Any unmapped Critical/Major issue should fail the Step 8 quality gate unless the user explicitly approves degraded delivery.
 
 ## Checkpoint
 
 This skill runs as part of Step 7 alongside `cover-memo-writer`. The main agent updates `checkpoint.json` after ALL Step 7 outputs are generated:
 - `step_7.status` → `"completed"`
-- `step_7.output` → comma-separated paths of redline DOCX, clean DOCX, and cover memo
+- `step_7.output` → comma-separated paths of redline DOCX, clean DOCX, cover memo, and `working/redline-mapping-report.json`
 - `last_completed_step` → `7`

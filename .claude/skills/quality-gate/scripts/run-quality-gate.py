@@ -27,6 +27,12 @@ def load_json(path):
         return json.load(f)
 
 
+def load_json_optional(path):
+    if not path or not os.path.exists(path):
+        return None
+    return load_json(path)
+
+
 def write_json(path, payload):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
@@ -147,6 +153,7 @@ def main():
     manifest = load_json(os.path.join(args.working_dir, "review-manifest.json"))
     citation_list_path = os.path.join(args.working_dir, "citation-list.json")
     citation_list = load_json(citation_list_path) if os.path.exists(citation_list_path) else None
+    redline_mapping_report = load_json_optional(os.path.join(args.working_dir, "redline-mapping-report.json"))
 
     redline_path = find_first(os.path.join(args.deliverables_dir, "*_redline_v*.docx"))
     clean_path = find_first(os.path.join(args.deliverables_dir, "*_clean_v*.docx"))
@@ -248,6 +255,30 @@ def main():
         "Clean DOCX has no comments or tracked changes." if clean_pass else f"Clean DOCX still has markers: {clean_counts}.",
         blocking=True,
     )
+
+    if redline_mapping_report is not None:
+        mapping_summary = redline_mapping_report.get("summary", {})
+        critical_major_unmapped = int(mapping_summary.get("critical_major_unmapped", 0) or 0)
+        mapping_pass = critical_major_unmapped == 0
+        add_check(
+            checks,
+            "Check 6A — Redline Mapping Report",
+            mapping_pass,
+            (
+                "No Critical/Major issue is unmapped in redline-mapping-report.json."
+                if mapping_pass
+                else f"{critical_major_unmapped} Critical/Major issue(s) are unmapped in redline-mapping-report.json."
+            ),
+            blocking=True,
+        )
+    else:
+        add_check(
+            checks,
+            "Check 6A — Redline Mapping Report",
+            False,
+            "redline-mapping-report.json not found; mapping threshold check skipped for backward compatibility.",
+            blocking=False,
+        )
 
     expected_recommendation = compute_release_recommendation(issues, grade)
     release_pass = release_text == expected_recommendation
