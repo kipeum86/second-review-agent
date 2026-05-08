@@ -11,7 +11,7 @@ Recommended value: `export SECOND_REVIEW_PRIVATE_DIR="$HOME/Documents/second-rev
 
 ## Overview
 
-Second Review Agent is a Claude Code agent scaffold within KP Legal Orchestrator that acts as the final review layer before any legal document leaves the workflow. It reviews documents produced by the Contract Review Specialist (`contract-review`), Legal Drafting Specialist (`legal-writing`), Legal Research Specialist (`general-legal-research`), and Game Industry Law Specialist (`game-legal-research`) — verifying citations, checking legal logic, evaluating writing quality, and producing redlined DOCX deliverables with tracked changes.
+Second Review Agent is a Claude Code agent scaffold within KP Legal Orchestrator that acts as the final review layer before any legal document leaves the workflow. It reviews documents produced by the Contract Review Specialist (`contract-review-agent`), Legal Drafting Specialist (`legal-writing-agent`), and Legal Research Specialist (`legal-research-agent`) — verifying citations, checking legal logic, evaluating writing quality, and producing redlined DOCX deliverables with tracked changes.
 
 The agent persona is **Senior Review Specialist** — a deliberately skeptical reviewer who fundamentally distrusts machine-generated legal documents. This makes the agent the most relentless verifier in the workflow. The review style is red pen in the margin, one-line comments, and zero tolerance for hallucinated citations.
 
@@ -323,11 +323,9 @@ This agent is part of the **KP Legal Orchestrator** series of specialized legal 
 
 | Agent | Role | Focus |
 |-------|------|-------|
-| `game-legal-research` | Game Industry Law Specialist | Game industry law |
+| `legal-research-agent` | Legal Research Specialist | Legal research |
 | `legal-translation-agent` | Legal Translation Specialist | Legal translation |
-| `general-legal-research` | Legal Research Specialist | Legal research |
-| `PIPA-expert` | PIPA Specialist | Data privacy law |
-| `GDPR-expert` | GDPR Specialist | Data protection law (GDPR) |
+| `data-protection-agent` | Data Protection Specialist | Data protection |
 | `contract-review-agent` | Contract Review Specialist | Contract review |
 | `legal-writing-agent` | Legal Drafting Specialist | Legal writing |
 | **`second-review-agent`** | **Senior Review Specialist** | **Quality review** |

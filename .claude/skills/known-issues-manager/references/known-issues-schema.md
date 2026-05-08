@@ -23,8 +23,7 @@
 library/known-issues/
 ├── legal-writing-agent.json
 ├── contract-review-agent.json
-├── general-legal-research-agent.json
-└── game-legal-research-agent.json
+└── legal-research-agent.json
 ```
 
 Each file contains a JSON array of pattern entries.
