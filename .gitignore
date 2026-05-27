@@ -10,6 +10,11 @@ library/grade-a/*
 library/grade-b/*
 library/grade-c/*
 
+# Known Issues generated artifacts
+library/known-issues/*.index.json
+library/known-issues/occurrence-ledger.jsonl
+library/known-issues/frequency-cache.json
+
 # Keep directory markers
 !input/.gitkeep
 !output/.gitkeep

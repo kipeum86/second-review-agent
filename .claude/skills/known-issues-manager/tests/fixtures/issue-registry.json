@@ -1,0 +1,17 @@
+{
+  "matter_id": "SYN-004",
+  "round": 1,
+  "review_depth": "standard",
+  "total_issues": 1,
+  "issues": [
+    {
+      "issue_id": "ISS-001",
+      "dimension": 4,
+      "severity": "Minor",
+      "document_type": "advisory",
+      "defect_type": "passive_by_overuse",
+      "description": "Passive construction overuse makes the advice harder to read.",
+      "recommendation": "Rewrite passive clauses as active clauses."
+    }
+  ]
+}

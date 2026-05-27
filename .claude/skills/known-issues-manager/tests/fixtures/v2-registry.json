@@ -1,0 +1,24 @@
+[
+  {
+    "schema_version": 2,
+    "pattern_id": "KI-002",
+    "agent": "legal-writing-agent",
+    "document_type": "advisory",
+    "dimension": 4,
+    "defect_type": "passive_by_overuse",
+    "pattern": "Passive construction overuse in formal advice",
+    "pattern_normalized": "passive construction overuse formal advice",
+    "keywords": ["passive", "construction", "overuse", "formal", "advice"],
+    "match_signature": "legal-writing-agent|d4|advisory|passive_by_overuse",
+    "detection_rule": "synthetic-fixture passive_by count >= 5",
+    "recommended_fix": "Rewrite passive clauses as active clauses where possible.",
+    "frequency": 3,
+    "first_seen": "2026-01-01",
+    "last_seen": "2026-01-15",
+    "matter_ids": ["SYN-001", "SYN-002", "SYN-003"],
+    "examples_max": 3,
+    "examples": [
+      "The agreement was signed by the parties -> The parties signed the agreement"
+    ]
+  }
+]

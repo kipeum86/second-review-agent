@@ -1,0 +1,58 @@
+[
+  {
+    "matter_id": "SYN-101",
+    "round": 1,
+    "document_type": "advisory",
+    "issues": [
+      {
+        "issue_id": "ISS-001",
+        "dimension": 4,
+        "document_type": "advisory",
+        "defect_type": "passive_by_overuse",
+        "description": "Passive construction overuse appears throughout the advice."
+      }
+    ]
+  },
+  {
+    "matter_id": "SYN-101",
+    "round": 2,
+    "document_type": "advisory",
+    "issues": [
+      {
+        "issue_id": "ISS-001",
+        "dimension": 4,
+        "document_type": "advisory",
+        "defect_type": "passive_by_overuse",
+        "description": "Passive construction overuse still appears after re-review."
+      }
+    ]
+  },
+  {
+    "matter_id": "SYN-102",
+    "round": 1,
+    "document_type": "advisory",
+    "issues": [
+      {
+        "issue_id": "ISS-001",
+        "dimension": 4,
+        "document_type": "advisory",
+        "defect_type": "passive_by_overuse",
+        "description": "Passive construction overuse makes the advice harder to read."
+      }
+    ]
+  },
+  {
+    "matter_id": "SYN-103",
+    "round": 1,
+    "document_type": "advisory",
+    "issues": [
+      {
+        "issue_id": "ISS-001",
+        "dimension": 4,
+        "document_type": "advisory",
+        "defect_type": "passive_by_overuse",
+        "description": "Passive construction overuse reduces clarity."
+      }
+    ]
+  }
+]

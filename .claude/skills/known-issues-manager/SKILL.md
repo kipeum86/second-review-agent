@@ -6,6 +6,7 @@ Match review findings against known recurring patterns and manage the known-issu
 
 1. **Pattern Matching** (WF1 Step 6)
    - Compare each finding against `library/known-issues/{agent-name}.json`
+   - Use `library/known-issues/{agent-name}.index.json` when present and current to narrow candidate patterns
    - Match by: dimension + document_type + pattern description similarity
    - Tag matches as `[Recurring: {pattern_id}]` in issue registry
    - Include pattern's `recommended_fix` in the review comment
@@ -13,6 +14,7 @@ Match review findings against known recurring patterns and manage the known-issu
 2. **Frequency Tracking** (post-delivery)
    - On pattern match: auto-increment `frequency` and update `last_seen`
    - Count distinct matters only (same matter re-reviews don't increase count)
+   - Append normalized finding events to `library/known-issues/occurrence-ledger.jsonl` when ledger tracking is enabled
 
 3. **New Pattern Proposal** (post-delivery)
    - After each review, scan findings for potential new patterns
@@ -23,12 +25,14 @@ Match review findings against known recurring patterns and manage the known-issu
 4. **Post-Delivery Trigger Protocol** (automatic after Step 8)
    - After Step 8 (quality-gate) completes, automatically scan for recurring patterns:
      1. Load current review's `issue-registry.json`
-     2. Group findings by `(dimension, defect_type)` — if `defect_type` absent, use description keyword extraction
-     3. For each group with ≥2 findings in current review:
-        a. Scan all prior review outputs: `$SECOND_REVIEW_PRIVATE_DIR/output/*/round_*/working/issue-registry.json`
+     2. Normalize findings and append occurrence events to the ledger, if configured
+     3. Group findings by `(dimension, defect_type)` — if `defect_type` absent, use description keyword extraction
+     4. Count distinct `matter_id`s from `occurrence-ledger.jsonl`, keyed by `pattern_id` or `match_signature`
+     5. If the ledger is missing, scan prior review outputs as fallback:
+        a. `$SECOND_REVIEW_PRIVATE_DIR/output/*/round_*/working/issue-registry.json`
         b. Count distinct `matter_id`s where similar findings appeared
         c. Two findings are "similar" if they share the same dimension AND (`defect_type` matches OR description keyword overlap > 50%)
-     4. If total distinct matters ≥ 3 → propose new pattern to user
+     6. If total distinct matters ≥ 3 → propose new pattern to user
    - This runs automatically; no user invocation required
 
 ## When to Use
@@ -36,6 +40,15 @@ Match review findings against known recurring patterns and manage the known-issu
 - WF1 Step 6: check findings against existing patterns
 - Post-delivery: propose new patterns if criteria met
 - WF4 `/library known-issues`: view, add, or edit patterns
+
+## Maintenance Commands
+
+- Rebuild indexes and print diagnostics:
+  - `python3 .claude/skills/known-issues-manager/scripts/known_issue_maintenance.py library/known-issues`
+- Check generated artifact status without writing:
+  - `python3 .claude/skills/known-issues-manager/scripts/known_issue_maintenance.py library/known-issues --check`
+- Rebuild the optional frequency cache from a ledger:
+  - `python3 .claude/skills/known-issues-manager/scripts/known_issue_maintenance.py library/known-issues --ledger-path <path> --write-frequency-cache`
 
 ## Known Issues Registry Schema
 
@@ -64,11 +77,14 @@ File: `library/known-issues/{agent-name}.json`
 ## Pattern Matching Algorithm
 
 1. Load known-issues for the inferred originating agent
-2. For each finding in issue-registry:
+2. Load the generated sidecar index if it exists and its `source_sha256` matches the registry
+3. For each finding in issue-registry:
    - Compare dimension match
    - Compare document_type match (if specified in pattern)
    - Compare description similarity (keyword overlap > 50%)
-3. If match found:
+   - Prefer index candidates in this order: exact `match_signature`, same `dimension + document_type`, same `dimension`
+   - Fall back to the legacy dimension scan if the index is missing, stale, or returns no candidates
+4. If match found:
    - Tag finding with `recurring_pattern: {pattern_id}`
    - Add pattern note to review comment
    - Update pattern's `frequency` and `last_seen`
@@ -102,6 +118,11 @@ Use document language for the proposal. If document is English, use the English 
 
 ## References
 - `references/known-issues-schema.md` — full schema documentation
+- `scripts/known_issue_normalizer.py` — v2 matching metadata normalization helpers
+- `scripts/known_issue_index.py` — generated sidecar index builder and candidate lookup helpers
+- `scripts/known_issue_ledger.py` — append-only occurrence ledger and distinct-matter counting helpers
+- `scripts/known_issue_maintenance.py` — rebuild/check command for generated indexes and optional frequency cache
+- `../../../docs/plans/known-issues-performance-plan.md` — performance improvement plan for matching, indexing, and frequency tracking
 
 ## Checkpoint
 

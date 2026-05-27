@@ -1,0 +1,18 @@
+[
+  {
+    "pattern_id": "KI-001",
+    "agent": "legal-writing-agent",
+    "document_type": "advisory",
+    "dimension": 4,
+    "pattern": "Passive construction overuse in formal advice",
+    "detection_rule": "synthetic-fixture passive_by count >= 5",
+    "recommended_fix": "Rewrite passive clauses as active clauses where possible.",
+    "frequency": 3,
+    "first_seen": "2026-01-01",
+    "last_seen": "2026-01-15",
+    "matter_ids": ["SYN-001", "SYN-002", "SYN-003"],
+    "examples": [
+      "The agreement was signed by the parties -> The parties signed the agreement"
+    ]
+  }
+]
